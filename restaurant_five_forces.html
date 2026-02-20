@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍜 Restaurant Profit Simulator — Porter's Five Forces</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
+
+:root{
+  --bg:#fff8f0;
+  --panel:#ffffff;
+  --orange:#f97316;
+  --orange-light:#fed7aa;
+  --orange-mid:#fdba74;
+  --orange-dark:#ea580c;
+  --peach:#fff1e6;
+  --yellow:#fef08a;
+  --yellow-dark:#ca8a04;
+  --green:#86efac;
+  --green-dark:#16a34a;
+  --red:#fca5a5;
+  --red-dark:#dc2626;
+  --ink:#431a00;
+  --muted:#92614a;
+  --border:#f5d0a9;
+  --white:#ffffff;
+  --shadow:0 4px 16px rgba(249,115,22,.13);
+  --shadow-sm:0 2px 8px rgba(249,115,22,.1);
+  --radius:16px;
+  --radius-sm:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.65}
+
+/* deco background dots */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:radial-gradient(circle,#f9731620 1.5px,transparent 1.5px);
+  background-size:28px 28px;
+  pointer-events:none;z-index:0;
+}
+
+.app{display:grid;grid-template-rows:auto 1fr;min-height:100vh;position:relative;z-index:1}
+
+/* ── TOPBAR ── */
+.topbar{
+  background:linear-gradient(135deg,var(--orange-dark) 0%,var(--orange) 60%,#fb923c 100%);
+  color:#fff;
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 4px 20px rgba(234,88,12,.35);
+}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-icon{font-size:28px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.2));animation:wobble 3s ease-in-out infinite}
+@keyframes wobble{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+.topbar-title{font-size:18px;font-weight:900;letter-spacing:.2px;text-shadow:0 1px 3px rgba(0,0,0,.2)}
+.topbar-sub{font-size:10px;opacity:.85;font-weight:600;letter-spacing:.5px}
+.topbar-right{display:flex;align-items:center;gap:10px}
+
+/* lang toggle */
+.lang-toggle{
+  display:flex;background:rgba(255,255,255,.2);border-radius:20px;padding:3px;gap:2px;
+}
+.lang-btn{
+  padding:4px 11px;border-radius:16px;border:none;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;
+  background:transparent;color:rgba(255,255,255,.8);transition:all .2s;letter-spacing:.3px;
+}
+.lang-btn.active{background:#fff;color:var(--orange-dark);box-shadow:0 1px 4px rgba(0,0,0,.15)}
+
+.score-badge{
+  background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.5);
+  color:#fff;padding:5px 14px;border-radius:20px;
+  font-family:'DM Mono',monospace;font-size:12px;font-weight:500;
+  cursor:pointer;transition:all .2s;letter-spacing:.5px;
+  backdrop-filter:blur(4px);
+}
+.score-badge:hover{background:rgba(255,255,255,.35)}
+
+/* ── LAYOUT ── */
+.main-content{display:grid;grid-template-columns:310px 1fr;height:calc(100vh - 54px);overflow:hidden}
+
+/* ── LEFT PANEL ── */
+.left-panel{
+  background:var(--panel);
+  border-right:2px solid var(--border);
+  overflow-y:auto;display:flex;flex-direction:column;
+  box-shadow:2px 0 12px rgba(249,115,22,.08);
+}
+.panel-header{
+  padding:16px 18px 12px;
+  background:linear-gradient(160deg,#fff8f0,#fff1e6);
+  border-bottom:2px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.panel-header-icon{font-size:22px}
+.panel-title{font-size:15px;font-weight:900;color:var(--ink)}
+.panel-desc{font-size:10px;color:var(--muted);font-weight:600}
+
+.section{padding:14px 16px;border-bottom:2px dashed var(--border)}
+.section-label{
+  font-size:10px;font-weight:800;color:var(--orange-dark);
+  letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;
+  display:flex;align-items:center;gap:5px;
+}
+.option-group{display:flex;flex-direction:column;gap:5px}
+.option-btn{
+  width:100%;text-align:left;padding:8px 12px;
+  border:2px solid var(--border);background:var(--peach);
+  color:var(--ink);cursor:pointer;
+  font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;
+  border-radius:var(--radius-sm);transition:all .18s;position:relative;
+}
+.option-btn:hover{border-color:var(--orange-mid);background:#fff3e8;transform:translateX(2px)}
+.option-btn.active{
+  border-color:var(--orange);background:linear-gradient(135deg,var(--orange),var(--orange-dark));
+  color:#fff;transform:translateX(2px);
+  box-shadow:0 3px 10px rgba(249,115,22,.35);
+}
+.option-btn.active::after{content:'✓';position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px}
+
+/* cost bars */
+.cost-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.cost-icon{font-size:13px}
+.cost-label{font-size:11px;color:var(--ink);font-weight:700;flex:1}
+.cost-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--orange-dark);width:32px;text-align:right;font-weight:500}
+.cost-bar{width:100%;height:6px;background:var(--border);border-radius:4px;margin-bottom:10px;overflow:hidden}
+.cost-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--orange-mid),var(--orange));transition:width .4s cubic-bezier(.34,1.56,.64,1)}
+
+/* score summary */
+.score-summary{
+  padding:16px;
+  background:linear-gradient(160deg,var(--orange-dark),var(--orange) 70%,#fb923c);
+  color:#fff;flex:1;
+}
+.score-main-label{font-size:9px;font-weight:800;color:rgba(255,255,255,.75);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.score-big{font-size:54px;font-weight:900;line-height:1;color:#fff;transition:color .3s;text-shadow:0 2px 8px rgba(0,0,0,.2)}
+.score-verdict{font-size:11px;margin-top:4px;color:rgba(255,255,255,.9);font-weight:700}
+.five-force-scores{margin-top:14px;display:flex;flex-direction:column;gap:7px}
+.ff-row{display:flex;align-items:center;gap:7px;cursor:pointer;padding:5px 6px;border-radius:8px;transition:background .15s}
+.ff-row:hover{background:rgba(255,255,255,.12)}
+.ff-emoji{font-size:13px;width:18px}
+.ff-label{font-size:10px;flex:1;color:rgba(255,255,255,.88);font-weight:700}
+.ff-bar-bg{width:68px;height:5px;background:rgba(255,255,255,.2);border-radius:3px}
+.ff-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.ff-num{font-family:'DM Mono',monospace;font-size:10px;color:#fff;width:24px;text-align:right;font-weight:500}
+
+/* ── FOOD DECO STRIP ── */
+.food-strip{
+  padding:6px 16px;
+  background:linear-gradient(90deg,var(--orange-light),var(--yellow),var(--orange-light));
+  border-bottom:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:18px;letter-spacing:2px;
+}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.food-strip span{display:inline-block;animation:float 2s ease-in-out infinite}
+.food-strip span:nth-child(2){animation-delay:.2s}
+.food-strip span:nth-child(3){animation-delay:.4s}
+.food-strip span:nth-child(4){animation-delay:.6s}
+.food-strip span:nth-child(5){animation-delay:.8s}
+.food-strip span:nth-child(6){animation-delay:1s}
+.food-strip span:nth-child(7){animation-delay:1.2s}
+
+/* ── RIGHT PANEL ── */
+.right-panel{display:flex;flex-direction:column;overflow:hidden}
+.tab-bar{display:flex;background:var(--panel);border-bottom:2px solid var(--border);overflow-x:auto;gap:2px;padding:0 8px}
+.tab-btn{
+  padding:10px 13px;border:none;background:none;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;
+  color:var(--muted);border-bottom:3px solid transparent;
+  white-space:nowrap;transition:all .15s;border-radius:8px 8px 0 0;margin-top:4px;
+}
+.tab-btn:hover{color:var(--orange-dark);background:var(--peach)}
+.tab-btn.active{color:var(--orange-dark);border-bottom-color:var(--orange);background:var(--peach)}
+
+.tab-content{flex:1;overflow-y:auto;padding:20px 22px;background:var(--bg);display:none;flex-direction:column;gap:0}
+.tab-content.active{display:flex}
+
+/* force header */
+.force-header{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:16px;padding-bottom:14px;border-bottom:2px dashed var(--border);
+}
+.force-title-wrap{display:flex;align-items:center;gap:10px}
+.force-emoji{font-size:30px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.1))}
+.force-name{font-size:20px;font-weight:900;color:var(--ink)}
+.force-sub{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
+
+.intensity-badge{
+  padding:5px 13px;border-radius:20px;
+  font-family:'DM Mono',monospace;font-size:10px;font-weight:500;letter-spacing:1px;
+}
+.intensity-high{background:#fee2e2;color:#b91c1c;border:2px solid #fca5a5}
+.intensity-medium{background:#fef9c3;color:#a16207;border:2px solid #fde68a}
+.intensity-low{background:#dcfce7;color:#15803d;border:2px solid #86efac}
+
+/* data cards */
+.data-cards{display:grid;gap:10px}
+.data-card{
+  background:var(--panel);border:2px solid var(--border);
+  border-radius:var(--radius);padding:13px 15px;
+  box-shadow:var(--shadow-sm);transition:transform .15s,box-shadow .15s;
+}
+.data-card:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.data-card-label{
+  font-size:9px;font-weight:800;color:var(--orange);
+  letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;
+  display:flex;align-items:center;gap:4px;
+}
+.data-card-value{font-size:14px;font-weight:800;color:var(--ink);line-height:1.35}
+.data-card-note{font-size:11px;color:var(--muted);margin-top:4px;font-weight:600;line-height:1.45}
+.data-source{
+  font-family:'DM Mono',monospace;font-size:8.5px;color:var(--muted);
+  margin-top:6px;padding-top:6px;border-top:1.5px dashed var(--border);
+}
+.adapt-tag{
+  display:inline-flex;align-items:center;gap:4px;
+  background:linear-gradient(135deg,var(--orange-light),var(--yellow));
+  border:2px solid var(--orange-mid);color:var(--orange-dark);
+  font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;
+  letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase;
+}
+
+/* scoring */
+.scoring-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.score-card{
+  background:var(--panel);border:2px solid var(--border);
+  border-radius:var(--radius);padding:14px;cursor:pointer;
+  transition:all .18s;box-shadow:var(--shadow-sm);
+}
+.score-card:hover{border-color:var(--orange-mid);transform:translateY(-2px);box-shadow:var(--shadow)}
+.score-card-icon{font-size:22px;margin-bottom:6px}
+.score-card-label{font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:700}
+.score-card-num{font-size:36px;font-weight:900;line-height:1}
+.score-card-weight{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:3px}
+.score-card-basis{font-size:10px;color:var(--muted);margin-top:7px;font-weight:600;line-height:1.4}
+
+/* feedback */
+.feedback-box{border-radius:var(--radius);padding:16px 18px;margin-bottom:14px;border:2px solid}
+.feedback-high{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:var(--green)}
+.feedback-medium{background:linear-gradient(135deg,#fefce8,#fef9c3);border-color:#fde68a}
+.feedback-low{background:linear-gradient(135deg,#fff1f2,#fee2e2);border-color:var(--red)}
+.feedback-title{font-size:16px;font-weight:900;margin-bottom:7px;display:flex;align-items:center;gap:8px}
+.feedback-body{font-size:12px;line-height:1.6;font-weight:600}
+.feedback-source{font-family:'DM Mono',monospace;font-size:8.5px;color:var(--muted);margin-top:8px}
+
+/* socratic */
+.socratic-box{
+  background:linear-gradient(135deg,var(--orange-dark),var(--orange) 80%);
+  color:#fff;border-radius:var(--radius);padding:16px 18px;margin-top:12px;
+  box-shadow:var(--shadow);
+}
+.socratic-label{font-size:9px;font-weight:800;color:rgba(255,255,255,.8);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.socratic-q{font-size:12px;line-height:1.65;color:#fff;margin-bottom:12px;font-weight:600}
+.socratic-input{
+  width:100%;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);
+  color:#fff;padding:9px 12px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:600;
+  border-radius:10px;resize:vertical;min-height:55px;
+}
+.socratic-input::placeholder{color:rgba(255,255,255,.6)}
+.socratic-input:focus{outline:none;border-color:rgba(255,255,255,.7)}
+.socratic-submit{
+  margin-top:7px;background:#fff;color:var(--orange-dark);border:none;
+  padding:8px 18px;font-family:'Nunito',sans-serif;font-size:12px;cursor:pointer;
+  border-radius:20px;font-weight:800;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+.socratic-submit:hover{transform:scale(1.04);box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.socratic-response{
+  margin-top:10px;padding:12px;background:rgba(255,255,255,.12);
+  border-left:3px solid rgba(255,255,255,.6);border-radius:0 8px 8px 0;
+  font-size:12px;line-height:1.6;display:none;font-weight:600;
+}
+
+/* report */
+.report-section{margin-bottom:22px}
+.report-section-title{
+  font-size:10px;font-weight:800;color:var(--orange-dark);
+  letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;
+  padding-bottom:6px;border-bottom:2px dashed var(--border);
+  display:flex;align-items:center;gap:6px;
+}
+.report-table{width:100%;border-collapse:collapse;font-size:11px;background:var(--panel);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.report-table th{background:linear-gradient(135deg,var(--orange-dark),var(--orange));color:#fff;padding:8px 10px;text-align:left;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+.report-table td{padding:8px 10px;border-bottom:1.5px solid var(--border);vertical-align:top;font-weight:600}
+.report-table tr:last-child td{border-bottom:none}
+.report-table tr:hover td{background:var(--peach)}
+.generate-btn{
+  background:linear-gradient(135deg,var(--orange-dark),var(--orange));
+  color:#fff;border:none;padding:11px 24px;
+  font-family:'Nunito',sans-serif;font-size:13px;cursor:pointer;
+  border-radius:24px;font-weight:800;letter-spacing:.3px;
+  transition:all .2s;box-shadow:0 4px 14px rgba(249,115,22,.4);
+  display:flex;align-items:center;gap:6px;
+}
+.generate-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(249,115,22,.5)}
+.hal-log{margin-top:14px}
+.hal-entry{
+  background:var(--panel);border:2px solid var(--border);
+  border-left:4px solid var(--orange);padding:10px 13px;
+  margin-bottom:8px;border-radius:var(--radius-sm);
+  box-shadow:var(--shadow-sm);
+}
+.hal-entry-label{font-size:9px;font-weight:800;color:var(--orange-dark);letter-spacing:1px;margin-bottom:3px;text-transform:uppercase}
+.hal-entry-text{font-size:11px;line-height:1.5;font-weight:600}
+
+/* modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(67,26,0,.6);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.modal-overlay.open{display:flex}
+.modal{
+  background:var(--panel);border-radius:var(--radius);padding:24px;
+  max-width:520px;width:90%;max-height:80vh;overflow-y:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,.25);
+}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:2px dashed var(--border)}
+.modal-title{font-size:17px;font-weight:900;color:var(--ink)}
+.modal-close{background:var(--peach);border:2px solid var(--border);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:800;transition:all .15s}
+.modal-close:hover{background:var(--orange-light);color:var(--orange-dark)}
+.modal-body{font-size:12px;line-height:1.7}
+.modal-body dt{font-weight:800;color:var(--orange-dark);margin-top:10px}
+.modal-body dd{margin-left:10px;color:var(--muted);font-size:11px;line-height:1.6;font-weight:600}
+
+/* notices */
+.data-notice{
+  background:linear-gradient(135deg,#fef9c3,#fefce8);border:2px solid #fde68a;
+  border-radius:var(--radius-sm);padding:9px 13px;font-size:10px;color:#854d0e;
+  margin-bottom:14px;font-weight:700;display:flex;align-items:flex-start;gap:6px;
+}
+.tag-unavail{
+  font-family:'DM Mono',monospace;font-size:9px;
+  background:#fee2e2;color:#dc2626;padding:1px 6px;border-radius:4px;font-weight:500;
+}
+
+/* scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb{background:var(--orange-mid);border-radius:4px}
+
+/* animations */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.updating{animation:pulse .35s}
+@keyframes popIn{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+.score-card{animation:popIn .25s ease-out}
+
+/* cartoon restaurant SVG strip */
+.cartoon-strip{
+  background:linear-gradient(90deg,var(--peach),#fff8e1,var(--peach));
+  border-bottom:2px solid var(--border);
+  padding:8px 0;overflow:hidden;white-space:nowrap;
+}
+.cartoon-inner{
+  display:inline-flex;align-items:center;gap:0;
+  animation:marquee 22s linear infinite;
+}
+@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-icon">🍳</div>
+    <div>
+      <div class="topbar-title" id="t-title">Restaurant Profit Simulator</div>
+      <div class="topbar-sub" id="t-sub">Porter's Five Forces · HK F&amp;B 2024–2026</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="btn-en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" id="btn-zh" onclick="setLang('zh')">中文</button>
+    </div>
+    <div id="topScoreBadge" class="score-badge" onclick="switchTab('scoring')">Score —</div>
+  </div>
+</div>
+
+<!-- CARTOON FOOD MARQUEE -->
+<div class="cartoon-strip">
+  <div class="cartoon-inner">
+    <!-- repeated twice for seamless loop -->
+    <svg width="1400" height="48" viewBox="0 0 1400 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Ramen bowl -->
+      <ellipse cx="50" cy="34" rx="20" ry="8" fill="#f97316" opacity=".9"/>
+      <ellipse cx="50" cy="30" rx="20" ry="8" fill="#fb923c"/>
+      <path d="M30 30 Q50 20 70 30" fill="#fef3c7"/>
+      <circle cx="42" cy="27" r="3" fill="#f97316"/>
+      <circle cx="52" cy="25" r="2.5" fill="#dc2626"/>
+      <circle cx="61" cy="27" r="2" fill="#16a34a"/>
+      <!-- Steam -->
+      <path d="M42 18 Q40 12 42 8" stroke="#fdba74" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <path d="M50 16 Q48 10 50 6" stroke="#fdba74" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <path d="M58 18 Q56 12 58 8" stroke="#fdba74" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <!-- Sushi -->
+      <rect x="100" y="22" width="18" height="14" rx="5" fill="#f5f5f5" stroke="#e5e7eb" stroke-width="1"/>
+      <ellipse cx="109" cy="22" rx="9" ry="5" fill="#fed7aa"/>
+      <ellipse cx="109" cy="21" rx="6" ry="3.5" fill="#dc2626" opacity=".8"/>
+      <rect x="106" y="20" width="6" height="3" rx="1.5" fill="#16a34a" opacity=".7"/>
+      <!-- Dim sum basket -->
+      <ellipse cx="165" cy="36" rx="17" ry="6" fill="#c2410c" opacity=".5"/>
+      <rect x="148" y="22" width="34" height="16" rx="6" fill="#fed7aa" stroke="#f97316" stroke-width="1.5"/>
+      <ellipse cx="165" cy="22" rx="17" ry="6" fill="#fef3c7" stroke="#f97316" stroke-width="1.5"/>
+      <circle cx="157" cy="28" r="4" fill="#fff" stroke="#fdba74" stroke-width="1"/>
+      <circle cx="165" cy="26" r="4" fill="#fff" stroke="#fdba74" stroke-width="1"/>
+      <circle cx="173" cy="28" r="4" fill="#fff" stroke="#fdba74" stroke-width="1"/>
+      <!-- Noodles fork -->
+      <rect x="212" y="10" width="4" height="30" rx="2" fill="#f97316"/>
+      <path d="M210 10 L210 20 M214 10 L214 20 M218 10 L218 20" stroke="#f97316" stroke-width="1.5" stroke-linecap="round"/>
+      <!-- Dumplings -->
+      <ellipse cx="260" cy="34" rx="22" ry="7" fill="#fdba74" opacity=".5"/>
+      <path d="M238 28 Q248 16 260 20 Q272 16 282 28 Q272 36 260 34 Q248 36 238 28Z" fill="#fef9c3" stroke="#f97316" stroke-width="1.5"/>
+      <path d="M250 24 Q260 20 270 24" stroke="#fdba74" stroke-width="1.5" fill="none"/>
+      <!-- Wok with flames -->
+      <ellipse cx="320" cy="38" rx="18" ry="6" fill="#1c1814" opacity=".3"/>
+      <path d="M302 30 Q310 16 320 28 Q330 16 338 30 Q330 40 320 38 Q310 40 302 30Z" fill="#374151"/>
+      <path d="M312 20 Q314 14 316 18" stroke="#f97316" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <path d="M320 18 Q322 11 324 16" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <path d="M326 21 Q328 15 330 19" stroke="#f97316" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <!-- Pineapple bun (cha chaan teng) -->
+      <ellipse cx="375" cy="34" rx="16" ry="8" fill="#f97316" opacity=".4"/>
+      <ellipse cx="375" cy="30" rx="16" ry="10" fill="#fef08a"/>
+      <path d="M359 30 Q366 22 375 24 Q384 22 391 30" fill="#fbbf24"/>
+      <path d="M362 27 L388 27 M364 30 L386 30" stroke="#f59e0b" stroke-width="1" opacity=".5"/>
+      <!-- Milk tea cup HK style -->
+      <rect x="420" y="18" width="20" height="24" rx="4" fill="#fed7aa" stroke="#f97316" stroke-width="1.5"/>
+      <rect x="420" y="18" width="20" height="7" rx="3" fill="#fde68a"/>
+      <rect x="416" y="40" width="28" height="4" rx="2" fill="#f97316" opacity=".6"/>
+      <path d="M440 26 Q446 26 446 30 Q446 34 440 34" stroke="#f97316" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <!-- Star icon -->
+      <text x="472" y="36" font-size="18" fill="#f97316" opacity=".6">⭐</text>
+      <!-- Char siu -->
+      <ellipse cx="520" cy="34" rx="16" ry="7" fill="#c2410c" opacity=".4"/>
+      <rect x="504" y="22" width="32" height="14" rx="7" fill="#dc2626" opacity=".8"/>
+      <path d="M507 24 Q520 20 533 24" fill="#f97316" opacity=".6"/>
+      <ellipse cx="520" cy="22" rx="16" ry="5" fill="#ea580c" opacity=".7"/>
+      <!-- Chopsticks -->
+      <rect x="560" y="8" width="3" height="35" rx="1.5" fill="#c2410c" transform="rotate(-10 562 25)"/>
+      <rect x="570" y="8" width="3" height="35" rx="1.5" fill="#c2410c" transform="rotate(10 572 25)"/>
+      <!-- Egg tart -->
+      <ellipse cx="618" cy="36" rx="14" ry="5" fill="#f97316" opacity=".3"/>
+      <ellipse cx="618" cy="30" rx="14" ry="8" fill="#fef3c7" stroke="#fbbf24" stroke-width="1.5"/>
+      <ellipse cx="618" cy="28" rx="10" ry="6" fill="#fde68a"/>
+      <ellipse cx="618" cy="27" rx="7" ry="4" fill="#fbbf24" opacity=".8"/>
+      <!-- Fortune cookie -->
+      <path d="M665 38 Q672 28 680 28 Q688 28 695 38 Q688 44 680 40 Q672 44 665 38Z" fill="#fde68a" stroke="#fbbf24" stroke-width="1.5"/>
+      <path d="M672 38 Q680 34 688 38" stroke="#f59e0b" stroke-width="1.5" fill="none"/>
+      <!-- Little chef hat -->
+      <rect x="728" y="28" width="24" height="12" rx="3" fill="#fff" stroke="#e5e7eb" stroke-width="1.5"/>
+      <ellipse cx="740" cy="28" rx="14" ry="8" fill="#fff" stroke="#e5e7eb" stroke-width="1.5"/>
+      <ellipse cx="740" cy="24" rx="8" ry="10" fill="#fff" stroke="#e5e7eb" stroke-width="1.5"/>
+      <!-- Sparkle -->
+      <text x="775" y="32" font-size="16" fill="#f97316" opacity=".5">✨</text>
+      <!-- Spring roll -->
+      <rect x="806" y="20" width="28" height="18" rx="9" fill="#fbbf24" stroke="#f97316" stroke-width="1.5" transform="rotate(-20 820 29)"/>
+      <path d="M808 24 Q820 20 832 24" stroke="#f59e0b" stroke-width="1" fill="none" transform="rotate(-20 820 29)"/>
+      <!-- Bowl with chopsticks -->
+      <ellipse cx="880" cy="36" rx="18" ry="7" fill="#f97316" opacity=".5"/>
+      <path d="M862 29 Q870 18 880 22 Q890 18 898 29 Q890 38 880 36 Q870 38 862 29Z" fill="#fef3c7" stroke="#f97316" stroke-width="1.5"/>
+      <rect x="872" y="10" width="2.5" height="24" rx="1.2" fill="#c2410c" transform="rotate(-12 873 22)"/>
+      <rect x="883" y="10" width="2.5" height="24" rx="1.2" fill="#c2410c" transform="rotate(12 884 22)"/>
+      <!-- Pork bao -->
+      <ellipse cx="935" cy="36" rx="15" ry="5" fill="#f97316" opacity=".3"/>
+      <ellipse cx="935" cy="29" rx="15" ry="12" fill="#fef9c3" stroke="#fde68a" stroke-width="1.5"/>
+      <path d="M927 26 Q935 22 943 26" stroke="#fbbf24" stroke-width="1.5" fill="none"/>
+      <circle cx="935" cy="25" r="3" fill="#fde68a"/>
+      <!-- Pineapple -->
+      <text x="966" y="36" font-size="22" fill="#fbbf24">🍍</text>
+      <!-- Pepper -->
+      <text x="1008" y="36" font-size="22">🌶️</text>
+      <!-- Star anise deco -->
+      <text x="1052" y="36" font-size="18" fill="#f97316">✦</text>
+      <!-- Little restaurant building -->
+      <rect x="1086" y="18" width="36" height="24" rx="3" fill="#fed7aa" stroke="#f97316" stroke-width="1.5"/>
+      <path d="M1083 20 L1104 10 L1125 20Z" fill="#f97316"/>
+      <rect x="1098" y="28" width="12" height="14" rx="2" fill="#fff" stroke="#f97316" stroke-width="1"/>
+      <rect x="1089" y="24" width="8" height="8" rx="1.5" fill="#fef3c7" stroke="#fdba74" stroke-width="1"/>
+      <rect x="1115" y="24" width="8" height="8" rx="1.5" fill="#fef3c7" stroke="#fdba74" stroke-width="1"/>
+      <text x="1098" y="20" font-size="7" fill="#fff" font-weight="bold" font-family="sans-serif">🍜</text>
+      <!-- Heart -->
+      <text x="1145" y="35" font-size="16" fill="#f97316" opacity=".6">♥</text>
+      <!-- Repeat gap -->
+      <text x="1180" y="34" font-size="20">🥢</text>
+      <text x="1220" y="34" font-size="20">🥡</text>
+      <text x="1260" y="34" font-size="20">🍱</text>
+      <text x="1305" y="34" font-size="20">🧆</text>
+      <text x="1350" y="34" font-size="16" fill="#f97316">✦</text>
+    </svg>
+    <!-- Duplicate for seamless marquee -->
+    <svg width="1400" height="48" viewBox="0 0 1400 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="50" cy="34" rx="20" ry="8" fill="#f97316" opacity=".9"/>
+      <ellipse cx="50" cy="30" rx="20" ry="8" fill="#fb923c"/>
+      <path d="M30 30 Q50 20 70 30" fill="#fef3c7"/>
+      <circle cx="42" cy="27" r="3" fill="#f97316"/>
+      <circle cx="52" cy="25" r="2.5" fill="#dc2626"/>
+      <circle cx="61" cy="27" r="2" fill="#16a34a"/>
+      <path d="M42 18 Q40 12 42 8" stroke="#fdba74" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <path d="M50 16 Q48 10 50 6" stroke="#fdba74" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <path d="M58 18 Q56 12 58 8" stroke="#fdba74" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <rect x="100" y="22" width="18" height="14" rx="5" fill="#f5f5f5" stroke="#e5e7eb" stroke-width="1"/>
+      <ellipse cx="109" cy="22" rx="9" ry="5" fill="#fed7aa"/>
+      <ellipse cx="109" cy="21" rx="6" ry="3.5" fill="#dc2626" opacity=".8"/>
+      <rect x="106" y="20" width="6" height="3" rx="1.5" fill="#16a34a" opacity=".7"/>
+      <ellipse cx="165" cy="36" rx="17" ry="6" fill="#c2410c" opacity=".5"/>
+      <rect x="148" y="22" width="34" height="16" rx="6" fill="#fed7aa" stroke="#f97316" stroke-width="1.5"/>
+      <ellipse cx="165" cy="22" rx="17" ry="6" fill="#fef3c7" stroke="#f97316" stroke-width="1.5"/>
+      <circle cx="157" cy="28" r="4" fill="#fff" stroke="#fdba74" stroke-width="1"/>
+      <circle cx="165" cy="26" r="4" fill="#fff" stroke="#fdba74" stroke-width="1"/>
+      <circle cx="173" cy="28" r="4" fill="#fff" stroke="#fdba74" stroke-width="1"/>
+      <rect x="212" y="10" width="4" height="30" rx="2" fill="#f97316"/>
+      <path d="M210 10 L210 20 M214 10 L214 20 M218 10 L218 20" stroke="#f97316" stroke-width="1.5" stroke-linecap="round"/>
+      <ellipse cx="260" cy="34" rx="22" ry="7" fill="#fdba74" opacity=".5"/>
+      <path d="M238 28 Q248 16 260 20 Q272 16 282 28 Q272 36 260 34 Q248 36 238 28Z" fill="#fef9c3" stroke="#f97316" stroke-width="1.5"/>
+      <path d="M250 24 Q260 20 270 24" stroke="#fdba74" stroke-width="1.5" fill="none"/>
+      <ellipse cx="320" cy="38" rx="18" ry="6" fill="#1c1814" opacity=".3"/>
+      <path d="M302 30 Q310 16 320 28 Q330 16 338 30 Q330 40 320 38 Q310 40 302 30Z" fill="#374151"/>
+      <path d="M312 20 Q314 14 316 18" stroke="#f97316" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <path d="M320 18 Q322 11 324 16" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <path d="M326 21 Q328 15 330 19" stroke="#f97316" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <ellipse cx="375" cy="34" rx="16" ry="8" fill="#f97316" opacity=".4"/>
+      <ellipse cx="375" cy="30" rx="16" ry="10" fill="#fef08a"/>
+      <path d="M359 30 Q366 22 375 24 Q384 22 391 30" fill="#fbbf24"/>
+      <rect x="420" y="18" width="20" height="24" rx="4" fill="#fed7aa" stroke="#f97316" stroke-width="1.5"/>
+      <rect x="420" y="18" width="20" height="7" rx="3" fill="#fde68a"/>
+      <rect x="416" y="40" width="28" height="4" rx="2" fill="#f97316" opacity=".6"/>
+      <path d="M440 26 Q446 26 446 30 Q446 34 440 34" stroke="#f97316" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <text x="472" y="36" font-size="18" fill="#f97316" opacity=".6">⭐</text>
+      <ellipse cx="520" cy="34" rx="16" ry="7" fill="#c2410c" opacity=".4"/>
+      <rect x="504" y="22" width="32" height="14" rx="7" fill="#dc2626" opacity=".8"/>
+      <ellipse cx="520" cy="22" rx="16" ry="5" fill="#ea580c" opacity=".7"/>
+      <rect x="560" y="8" width="3" height="35" rx="1.5" fill="#c2410c" transform="rotate(-10 562 25)"/>
+      <rect x="570" y="8" width="3" height="35" rx="1.5" fill="#c2410c" transform="rotate(10 572 25)"/>
+      <ellipse cx="618" cy="36" rx="14" ry="5" fill="#f97316" opacity=".3"/>
+      <ellipse cx="618" cy="30" rx="14" ry="8" fill="#fef3c7" stroke="#fbbf24" stroke-width="1.5"/>
+      <ellipse cx="618" cy="28" rx="10" ry="6" fill="#fde68a"/>
+      <ellipse cx="618" cy="27" rx="7" ry="4" fill="#fbbf24" opacity=".8"/>
+      <path d="M665 38 Q672 28 680 28 Q688 28 695 38 Q688 44 680 40 Q672 44 665 38Z" fill="#fde68a" stroke="#fbbf24" stroke-width="1.5"/>
+      <path d="M672 38 Q680 34 688 38" stroke="#f59e0b" stroke-width="1.5" fill="none"/>
+      <rect x="728" y="28" width="24" height="12" rx="3" fill="#fff" stroke="#e5e7eb" stroke-width="1.5"/>
+      <ellipse cx="740" cy="28" rx="14" ry="8" fill="#fff" stroke="#e5e7eb" stroke-width="1.5"/>
+      <ellipse cx="740" cy="24" rx="8" ry="10" fill="#fff" stroke="#e5e7eb" stroke-width="1.5"/>
+      <text x="775" y="32" font-size="16" fill="#f97316" opacity=".5">✨</text>
+      <rect x="806" y="20" width="28" height="18" rx="9" fill="#fbbf24" stroke="#f97316" stroke-width="1.5" transform="rotate(-20 820 29)"/>
+      <ellipse cx="880" cy="36" rx="18" ry="7" fill="#f97316" opacity=".5"/>
+      <path d="M862 29 Q870 18 880 22 Q890 18 898 29 Q890 38 880 36 Q870 38 862 29Z" fill="#fef3c7" stroke="#f97316" stroke-width="1.5"/>
+      <rect x="872" y="10" width="2.5" height="24" rx="1.2" fill="#c2410c" transform="rotate(-12 873 22)"/>
+      <rect x="883" y="10" width="2.5" height="24" rx="1.2" fill="#c2410c" transform="rotate(12 884 22)"/>
+      <ellipse cx="935" cy="36" rx="15" ry="5" fill="#f97316" opacity=".3"/>
+      <ellipse cx="935" cy="29" rx="15" ry="12" fill="#fef9c3" stroke="#fde68a" stroke-width="1.5"/>
+      <path d="M927 26 Q935 22 943 26" stroke="#fbbf24" stroke-width="1.5" fill="none"/>
+      <circle cx="935" cy="25" r="3" fill="#fde68a"/>
+      <text x="966" y="36" font-size="22" fill="#fbbf24">🍍</text>
+      <text x="1008" y="36" font-size="22">🌶️</text>
+      <text x="1052" y="36" font-size="18" fill="#f97316">✦</text>
+      <rect x="1086" y="18" width="36" height="24" rx="3" fill="#fed7aa" stroke="#f97316" stroke-width="1.5"/>
+      <path d="M1083 20 L1104 10 L1125 20Z" fill="#f97316"/>
+      <rect x="1098" y="28" width="12" height="14" rx="2" fill="#fff" stroke="#f97316" stroke-width="1"/>
+      <rect x="1089" y="24" width="8" height="8" rx="1.5" fill="#fef3c7" stroke="#fdba74" stroke-width="1"/>
+      <rect x="1115" y="24" width="8" height="8" rx="1.5" fill="#fef3c7" stroke="#fdba74" stroke-width="1"/>
+      <text x="1145" y="35" font-size="16" fill="#f97316" opacity=".6">♥</text>
+      <text x="1180" y="34" font-size="20">🥢</text>
+      <text x="1220" y="34" font-size="20">🥡</text>
+      <text x="1260" y="34" font-size="20">🍱</text>
+      <text x="1305" y="34" font-size="20">🧆</text>
+      <text x="1350" y="34" font-size="16" fill="#f97316">✦</text>
+    </svg>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-content">
+
+<!-- LEFT PANEL -->
+<div class="left-panel">
+  <div class="panel-header">
+    <div class="panel-header-icon">🧑‍🍳</div>
+    <div>
+      <div class="panel-title" id="p-title">My Business Plan</div>
+      <div class="panel-desc" id="p-desc">Set decisions → instant Five Forces update</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">💰 <span id="l-budget">① Initial Budget</span></div>
+    <div class="option-group">
+      <button class="option-btn" data-group="budget" data-val="low" onclick="pick('budget','low',this)"><span id="b-low">HK$100K–500K (Light asset entry)</span></button>
+      <button class="option-btn" data-group="budget" data-val="mid" onclick="pick('budget','mid',this)"><span id="b-mid">HK$500K–1M (Mid-scale standard)</span></button>
+      <button class="option-btn" data-group="budget" data-val="high" onclick="pick('budget','high',this)"><span id="b-high">HK$1M+ (Scaled investment)</span></button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">📊 <span id="l-cost">② Cost Allocation</span></div>
+    <div class="option-group">
+      <button class="option-btn" data-group="cost" data-val="foodheavy" onclick="pick('cost','foodheavy',this)"><span id="c-foodheavy">Food-heavy (Food 45% / Rent 30% / Fitout 25%)</span></button>
+      <button class="option-btn" data-group="cost" data-val="balanced" onclick="pick('cost','balanced',this)"><span id="c-balanced">Balanced (Food 35% / Rent 35% / Fitout 30%)</span></button>
+      <button class="option-btn" data-group="cost" data-val="ambiance" onclick="pick('cost','ambiance',this)"><span id="c-ambiance">Ambiance-heavy (Food 25% / Rent 25% / Fitout 50%)</span></button>
+    </div>
+    <div id="costBars" style="margin-top:10px;display:none">
+      <div class="cost-row"><span class="cost-icon">🥩</span><span class="cost-label" id="cl-food">Food &amp; Ingredients</span><span class="cost-val" id="c1">—</span></div>
+      <div class="cost-bar"><div class="cost-fill" id="b1" style="width:0"></div></div>
+      <div class="cost-row"><span class="cost-icon">🏠</span><span class="cost-label" id="cl-rent">Rent</span><span class="cost-val" id="c2">—</span></div>
+      <div class="cost-bar"><div class="cost-fill" id="b2" style="width:0;background:linear-gradient(90deg,#60a5fa,#3b82f6)"></div></div>
+      <div class="cost-row"><span class="cost-icon">🎨</span><span class="cost-label" id="cl-fitout">Fitout &amp; Renovation</span><span class="cost-val" id="c3">—</span></div>
+      <div class="cost-bar"><div class="cost-fill" id="b3" style="width:0;background:linear-gradient(90deg,#86efac,#22c55e)"></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">⭐ <span id="l-comp">③ Core Competency</span></div>
+    <div class="option-group">
+      <button class="option-btn" data-group="comp" data-val="signature" onclick="pick('comp','signature',this)"><span id="comp-sig">🍽️ Signature Dishes (Differentiation)</span></button>
+      <button class="option-btn" data-group="comp" data-val="value" onclick="pick('comp','value',this)"><span id="comp-val">💎 Value-for-Money (Mass market)</span></button>
+      <button class="option-btn" data-group="comp" data-val="luxury" onclick="pick('comp','luxury',this)"><span id="comp-lux">✨ Premium Ambiance (Experience premium)</span></button>
+      <button class="option-btn" data-group="comp" data-val="supply" onclick="pick('comp','supply',this)"><span id="comp-sup">🔗 Exclusive Supply Chain (Cost moat)</span></button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">📍 <span id="l-locSeg">④ Location &amp; Target Segment</span></div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:700" id="ll-location">Location</div>
+      <div style="display:flex;gap:6px">
+        <button class="option-btn" style="flex:1" data-group="location" data-val="community" onclick="pick('location','community',this)"><span id="loc-com">🏘️ Community</span></button>
+        <button class="option-btn" style="flex:1" data-group="location" data-val="commercial" onclick="pick('location','commercial',this)"><span id="loc-cbd">🏙️ Commercial</span></button>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:700" id="ll-segment">Target Segment</div>
+      <div style="display:flex;gap:6px">
+        <button class="option-btn" style="flex:1" data-group="segment" data-val="mass" onclick="pick('segment','mass',this)"><span id="seg-mass">👥 Mass</span></button>
+        <button class="option-btn" style="flex:1" data-group="segment" data-val="premium" onclick="pick('segment','premium',this)"><span id="seg-prem">🌟 Premium</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCORE SUMMARY -->
+  <div class="score-summary">
+    <div class="score-main-label" id="ss-label">PROFIT SCORE</div>
+    <div class="score-big" id="mainScore">—</div>
+    <div class="score-verdict" id="scoreVerdict" data-zh-placeholder="請完成基本盤設置">Complete setup to see score</div>
+    <div class="five-force-scores">
+      <div class="ff-row" onclick="switchTab('suppliers')">
+        <span class="ff-emoji">🏭</span>
+        <span class="ff-label" id="ff-s">Supplier Power</span>
+        <div class="ff-bar-bg"><div class="ff-bar-fill" id="bar-s" style="width:0;background:#fb923c"></div></div>
+        <span class="ff-num" id="num-s">—</span>
+      </div>
+      <div class="ff-row" onclick="switchTab('buyers')">
+        <span class="ff-emoji">👥</span>
+        <span class="ff-label" id="ff-b">Buyer Power</span>
+        <div class="ff-bar-bg"><div class="ff-bar-fill" id="bar-b" style="width:0;background:#fb923c"></div></div>
+        <span class="ff-num" id="num-b">—</span>
+      </div>
+      <div class="ff-row" onclick="switchTab('entrants')">
+        <span class="ff-emoji">🚪</span>
+        <span class="ff-label" id="ff-e">New Entrants</span>
+        <div class="ff-bar-bg"><div class="ff-bar-fill" id="bar-e" style="width:0;background:#fbbf24"></div></div>
+        <span class="ff-num" id="num-e">—</span>
+      </div>
+      <div class="ff-row" onclick="switchTab('substitutes')">
+        <span class="ff-emoji">🔄</span>
+        <span class="ff-label" id="ff-sub">Substitutes</span>
+        <div class="ff-bar-bg"><div class="ff-bar-fill" id="bar-sub" style="width:0;background:#fbbf24"></div></div>
+        <span class="ff-num" id="num-sub">—</span>
+      </div>
+      <div class="ff-row" onclick="switchTab('rivals')">
+        <span class="ff-emoji">⚔️</span>
+        <span class="ff-label" id="ff-r">Rivalry</span>
+        <div class="ff-bar-bg"><div class="ff-bar-fill" id="bar-r" style="width:0;background:#fb923c"></div></div>
+        <span class="ff-num" id="num-r">—</span>
+      </div>
+    </div>
+  </div>
+</div><!-- end left -->
+
+<!-- RIGHT PANEL -->
+<div class="right-panel">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('rivals')" id="tab-rivals">⚔️ <span id="tab-r-lbl">Rivalry</span></button>
+    <button class="tab-btn" onclick="switchTab('entrants')" id="tab-entrants">🚪 <span id="tab-e-lbl">New Entrants</span></button>
+    <button class="tab-btn" onclick="switchTab('suppliers')" id="tab-suppliers">🏭 <span id="tab-s-lbl">Suppliers</span></button>
+    <button class="tab-btn" onclick="switchTab('buyers')" id="tab-buyers">👥 <span id="tab-b-lbl">Buyers</span></button>
+    <button class="tab-btn" onclick="switchTab('substitutes')" id="tab-substitutes">🔄 <span id="tab-sub-lbl">Substitutes</span></button>
+    <button class="tab-btn" onclick="switchTab('scoring')" id="tab-scoring">📊 <span id="tab-sc-lbl">Score Board</span></button>
+    <button class="tab-btn" onclick="switchTab('report')" id="tab-report">📄 <span id="tab-rp-lbl">Report</span></button>
+  </div>
+
+  <!-- ── RIVALS ── -->
+  <div class="tab-content active" id="content-rivals">
+    <div class="force-header">
+      <div class="force-title-wrap">
+        <div class="force-emoji">⚔️</div>
+        <div>
+          <div class="force-name" id="fn-rivals">Rivalry Among Existing Competitors</div>
+          <div class="force-sub">現有競爭者競爭強度</div>
+        </div>
+      </div>
+      <span class="intensity-badge intensity-high">HIGH 高</span>
+    </div>
+    <div class="data-notice">⚠️ <span id="dn-rivals">All data sourced from: User-provided research report (HK F&amp;B Porter's Five Forces Strategic Research Report, 2024–2026)</span></div>
+    <div class="data-cards">
+      <div class="data-card">
+        <div class="data-card-label">🍜 <span id="rc1-l">Market Size &amp; Real Growth</span></div>
+        <div class="data-card-value" id="rc1-v">2025 Full-Year Restaurant Receipts (Provisional): HK$109.6 Billion</div>
+        <div class="data-card-note" id="rc1-n">Nominal growth only +0.2%; real receipt volume fell −0.9% YoY (flat value, shrinking volume)</div>
+        <div class="data-source" id="rc1-s">Source: C&SD — Provisional Statistics of Restaurant Receipts and Purchases, Q4 & Full Year 2025</div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-label">🏪 <span id="rc2-l">Net Outlet Change (2024–2025)</span></div>
+        <div class="data-card-value" id="rc2-v">First Annual Net Contraction since 2018</div>
+        <div class="data-card-note" id="rc2-n">Over the 12-month period to April 2025, closures exceeded new licence issuances — intensifying competition for existing players</div>
+        <div class="data-source" id="rc2-s">Source: FEHD data analysis, cited via SCMP / Vino Joy (as per research report)</div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-label">📉 <span id="rc3-l">Chinese vs. Non-Chinese Restaurant Performance</span></div>
+        <div class="data-card-value" id="rc3-v">Chinese restaurants: Revenue −2.9% / Volume −4.3% (Full Year 2025)</div>
+        <div class="data-card-note" id="rc3-n">Non-Chinese segment grew +4.0% — structural market redistribution underway; traditional Chinese positioning faces dual decline</div>
+        <div class="data-source" id="rc3-s">Source: Census and Statistics Department (C&SD), Full Year 2025</div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-label">💸 <span id="rc4-l">Rigid Cost Structure</span></div>
+        <div class="data-card-value" id="rc4-v">2025 Food Purchases: HK$35.0B = 31.9% of revenue; Labour: 25%–35% of revenue</div>
+        <div class="data-card-note" id="rc4-n">Dual rigid cost burden severely constrains pricing flexibility across all segments</div>
+        <div class="data-source" id="rc4-s">Source: C&SD; Labour cost range: BLS / Escoffier (as per research report)</div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-label">📱 <span id="rc5-l">Delivery Platform Commission Erosion</span></div>
+        <div class="data-card-value" id="rc5-v">Standard delivery platform commission rate: ~30%</div>
+        <div class="data-card-note" id="rc5-n">To sustain delivery viability, restaurants must mark up delivery menus by 40–50%, undermining long-term brand loyalty</div>
+        <div class="data-source" id="rc5-s">Source: Industry survey (as cited in research report)</div>
+      </div>
+    </div>
+    <div id="rivals-adapt" style="margin-top:14px"></div>
+  </div>
+
+  <!-- ── ENTRANTS ── -->
+  <div class="tab-content" id="content-entrants">
+    <div class="force-header">
+      <div class="force-title-wrap">
+        <div class="force-emoji">🚪</div>
+        <div>
+          <div class="force-name" id="fn-entrants">Threat of New Entrants</div>
+          <div class="force-sub">新進入者威脅</div>
+        </div>
+      </div>
+      <span class="intensity-badge intensity-medium">MEDIUM 中</span>
+    </div>
+    <div class="data-notice">⚠️ <span id="dn-entrants">All data sourced from: User-provided research report (HK F&amp;B Porter's Five Forces Strategic Research Report, 2024–2026)</span></div>
+    <div class="data-cards">
+      <div class="data-card">
+        <div class="data-card-label">📋 <span id="ec1-l">Licensing Barrier: PCS System (from 1 Feb 2024)</span></div>
+        <div class="data-card-value" id="ec1-v">Licence issued within 2 working days after submission of professional compliance certificate</div>
+        <div class="data-card-note" id="ec1-n">~90% reduction vs. traditional AVP system (20 working days) — administrative barrier significantly lowered</div>
+        <div class="data-source" id="ec1-s">Source: FEHD — Guide to Professional Certification System (PCS)</div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-label">📊 <span id="ec2-l">First-Year Survival Rate (High Exit Risk)</span></div>
+        <div class="data-card-value" id="ec2-v">~26% of new restaurants close or change ownership within year one</div>
+        <div class="data-card-note" id="ec2-n">H1 2025 saw multiple established brands including Taipan Bread &amp; Cakes shut down, confirming persistent survival risk</div>
+        <div class="data-source" id="ec2-s">Source: BLS / Escoffier (as cited in research report)</div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-label">🏢 <span id="ec3-l">Capital Scale Barrier (Chain Reference)</span></div>
+        <div class="data-card-value" id="ec3-v">Fairwood Holdings PP&amp;E book value as of March 2025: HK$433 million</div>
+        <div class="data-card-note" id="ec3-n">Capital intensity for scaled entry far exceeds independent new entrant capacity; significant barrier at mid-to-high scale</div>
+        <div class="data-source" id="ec3-s">Source: Fairwood Holdings — Annual Results Announcement FY2024/25 (HKEXnews)</div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-label">🏘️ <span id="ec4-l">Rental Environment (2025)</span></div>
+        <div class="data-card-value" id="ec4-v">Retail rents in prime districts (e.g. TST) declined slightly by −0.5% in 2025</div>
+        <div class="data-card-note" id="ec4-n">"Tenant-friendly" environment lowers initial fixed-cost barriers — but benefits incumbents and new entrants equally</div>
+        <div class="data-source" id="ec4-s">Source: Knight Frank — Hong Kong Market Report Q4 2025</div>
+      </div>
+    </div>
+    <div id="entrants-adapt" style="margin-top:14px"></div>
+  </div>
+
+  <!-- ── SUPPLIERS ── -->
+  <div class="tab-content" id="content-suppliers">
+    <div class="force-header">
+      <div class="force-title-wrap">
+        <div class="force-emoji">🏭</div>
+        <div>
+          <div class="force-name" id="fn-suppliers">Bargaining Power of Suppliers</div>
+          <div class="force-sub">供應商議價能力</div>
+        </div>
+      </div>
+      <span class="intensity-badge intensity-medium">MEDIUM 中</span>
+    </div>
+    <div class="data-notice">⚠️ <span id="dn-suppliers">All data sourced from: User-provided research report (HK F&amp;B Porter's Five Forces Strategic Research Report, 2024–2026)</span></div>
+    <div class="data-cards">
+      <div class="data-card">
+        <div class="data-card-label">🚢 <span id="sc1-l">Food Import Dependency (Structural Vulnerability)</span></div>
+        <div class="data-card-value" id="sc1-v">95% of Hong Kong's food supply is imported</div>
+        <div class="data-card-note" id="sc1-n">Highly exposed to international commodity price shocks and supply chain disruptions; local agricultural capacity minimal</div>
+        <div class="data-source" id="sc1-s">Source: USDA FAS — Hong Kong Food Service Annual Report 2025</div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-label">🏪 <span id="sc2-l">Distribution Channel Concentration</span></div>
+        <div class="data-card-value" id="sc2-v">DCH (Dah Chong Hong) represents 100+ brands; Ng Fung Hong dominates fresh meat supply</div>
+        <div class="data-card-note" id="sc2-n">A few large distributors control wholesale channels; small-to-mid restaurants have limited alternative sourcing</div>
+        <div class="data-source" id="sc2-s">Source: DCH Holdings corporate data; Ng Fung Hong industry data (as cited in research report)</div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-label">📈 <span id="sc3-l">Food Price Volatility (Dec 2025)</span></div>
+        <div class="data-card-value" id="sc3-v">Basic food CPI rose only +0.7% YoY in December 2025</div>
+        <div class="data-card-note" id="sc3-n">Mild inflation temporarily moderates supplier bargaining pressure, providing a short-term margin buffer for restaurants</div>
+        <div class="data-source" id="sc3-s">Source: C&SD — Consumer Price Index Report, December 2025</div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-label">💰 <span id="sc4-l">Industry Average Net Profit Margin (2024)</span></div>
+        <div class="data-card-value" id="sc4-v">HK F&amp;B average profit margin: ~23%</div>
+        <div class="data-card-note" id="sc4-n">Significantly below regional peers (e.g. Vietnam: 38%); reflects chronic margin compression from supplier and labour costs</div>
+        <div class="data-source" id="sc4-s">Source: Restroworks — Hong Kong Restaurant Statistics (as cited in research report)</div>
+      </div>
+    </div>
+    <div id="suppliers-adapt" style="margin-top:14px"></div>
+  </div>
+
+  <!-- ── BUYERS ── -->
+  <div class="tab-content" id="content-buyers">
+    <div class="force-header">
+      <div class="force-title-wrap">
+        <div class="force-emoji">👥</div>
+        <div>
+          <div class="force-name" id="fn-buyers">Bargaining Power of Buyers</div>
+          <div class="force-sub">購買者議價能力</div>
+        </div>
+      </div>
+      <span class="intensity-badge intensity-high">HIGH 高</span>
+    </div>
+    <div class="data-notice">⚠️ <span id="dn-buyers">All data sourced from: User-provided research report (HK F&amp;B Porter's Five Forces Strategic Research Report, 2024–2026)</span></div>
+    <div class="data-cards">
+      <div class="data-card">
+        <div class="data-card-label">🚆 <span id="bc1-l">Northbound Spending: Structural Demand Leakage (Irreversible)</span></div>
+        <div class="data-card-value" id="bc1-v">2025: 87.1M HK resident land departures to Mainland; 2024 estimated Mainland spend: HK$55.7B (excl. transport)</div>
+        <div class="data-card-note" id="bc1-n">Trade bodies describe this trend as "totally irreversible"; departure volume surged from 53.6M in 2023</div>
+        <div class="data-source" id="bc1-s">Source: SCMP Research / Official data; China Daily (as cited in research report)</div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-label">✈️ <span id="bc2-l">Visitor Recovery but Spending Downgrade</span></div>
+        <div class="data-card-value" id="bc2-v">2024: 44.5M visitor arrivals; Mainland visitor per-capita spend −30% vs. 2018 baseline</div>
+        <div class="data-card-note" id="bc2-n">Volume recovered but spending power declined sharply — restaurants forced to compete on price rather than premium experience</div>
+        <div class="data-source" id="bc2-s">Source: China Daily / Hong Kong Tourism Board (HKTB) (as cited in research report)</div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-label">📱 <span id="bc3-l">Delivery Platform Penetration &amp; Subsidy-Driven Behaviour</span></div>
+        <div class="data-card-value" id="bc3-v">2025 delivery penetration: 38%; KeeTa captured 44% market share in early 2024</div>
+        <div class="data-card-note" id="bc3-n">Aggressive KeeTa subsidies conditioned consumers to discount-driven purchasing behaviour, raising price sensitivity</div>
+        <div class="data-source" id="bc3-s">Source: BBCIncorp (as cited in research report)</div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-label">💳 <span id="bc4-l">Cross-Border Payment Integration Cementing Northbound Habits</span></div>
+        <div class="data-card-value" id="bc4-v">2025: 126M cashless transactions by HK residents in Shenzhen / RMB 15.481B in value</div>
+        <div class="data-card-note" id="bc4-n">Seamless payment integration eliminates friction, deepening Mainland spending habits and permanently diverting local F&amp;B demand</div>
+        <div class="data-source" id="bc4-s">Source: People's Bank of China (Shenzhen), 2025 data</div>
+      </div>
+    </div>
+    <div id="buyers-adapt" style="margin-top:14px"></div>
+  </div>
+
+  <!-- ── SUBSTITUTES ── -->
+  <div class="tab-content" id="content-substitutes">
+    <div class="force-header">
+      <div class="force-title-wrap">
+        <div class="force-emoji">🔄</div>
+        <div>
+          <div class="force-name" id="fn-substitutes">Threat of Substitutes</div>
+          <div class="force-sub">替代品威脅 <span style="font-size:10px;color:var(--muted)">(Delivery = internal channel, excluded per Module 5)</span></div>
+        </div>
+      </div>
+      <span class="intensity-badge intensity-medium">MEDIUM 中</span>
+    </div>
+    <div class="data-notice">⚠️ <span id="dn-substitutes">Per report Module 5: delivery is an internal restaurant channel and is NOT classified as a substitute — assigned to Buyers (Module 4)</span></div>
+    <div class="data-cards">
+      <div class="data-card">
+        <div class="data-card-label">🛒 <span id="subc1-l">Retail Channel Market Share</span></div>
+        <div class="data-card-value" id="subc1-v">Supermarkets + convenience stores account for 55% of total food &amp; beverage retail sales</div>
+        <div class="data-card-note" id="subc1-n">In-store cooked food counters and convenience store ready-meals directly substitute licensed dine-in, especially for lunch and casual dining occasions</div>
+        <div class="data-source" id="subc1-s">Source: USDA FAS — Hong Kong Retail Foods Annual Report 2025</div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-label">🥡 <span id="subc2-l">Takeaway-Only Establishment Growth (2014–2024)</span></div>
+        <div class="data-card-value" id="subc2-v">Takeaway-only outlets grew 39% over the 10-year period 2014–2024</div>
+        <div class="data-card-note" id="subc2-n">Priced at HK$30–$50 per head, these outlets directly substitute licensed sit-down dining for lunch and casual meals</div>
+        <div class="data-source" id="subc2-s">Source: LegCo Research Office — F&amp;B Industry Challenges Brief (as cited in research report)</div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-label">💻 <span id="subc3-l">Food E-Commerce Scale (2025 Forecast)</span></div>
+        <div class="data-card-value" id="subc3-v"><span class="tag-unavail">[DATA UNAVAILABLE]</span> Specific revenue figure not fully presented in report version</div>
+        <div class="data-card-note" id="subc3-n">Report confirms ongoing e-commerce expansion; improved logistics make home cooking competitive on cost and health grounds</div>
+        <div class="data-source" id="subc3-s">Source: Statista / Digital Nomads HK (cited in report; specific value not fully disclosed)</div>
+      </div>
+      <div class="data-card">
+        <div class="data-card-label">🏬 <span id="subc4-l">Supermarket Cooked Food Sales (2023)</span></div>
+        <div class="data-card-value" id="subc4-v"><span class="tag-unavail">[DATA UNAVAILABLE]</span> Specific amount not fully presented in current report version</div>
+        <div class="data-card-note" id="subc4-n">Report confirms data exists; specific value not fully displayed — flagged per Missing Data Protocol, no estimation performed</div>
+        <div class="data-source" id="subc4-s">Source: User-provided research report (specific value pending verification)</div>
+      </div>
+    </div>
+    <div id="substitutes-adapt" style="margin-top:14px"></div>
+  </div>
+
+  <!-- ── SCORING ── -->
+  <div class="tab-content" id="content-scoring">
+    <div style="margin-bottom:16px;display:flex;align-items:center;gap:10px">
+      <div style="font-size:26px">📊</div>
+      <div>
+        <div class="force-name" id="sc-title" style="margin-bottom:2px">Score Board</div>
+        <div style="font-size:11px;color:var(--muted);font-weight:600" id="sc-sub">Scoring basis: Your decisions + User-provided research report data</div>
+      </div>
+    </div>
+    <div id="scoreNotice" class="data-notice">⚠️ <span id="score-notice-txt">Please complete all five settings in "My Business Plan" on the left to generate scores.</span></div>
+    <div id="scoringContent" style="display:none">
+      <div class="scoring-grid" id="scoreCards"></div>
+      <div id="feedbackBox"></div>
+      <div id="socraticSection"></div>
+    </div>
+  </div>
+
+  <!-- ── REPORT ── -->
+  <div class="tab-content" id="content-report">
+    <div style="margin-bottom:16px;display:flex;align-items:center;gap:10px">
+      <div style="font-size:26px">📄</div>
+      <div>
+        <div class="force-name" id="rp-title" style="margin-bottom:2px">Restaurant Profit Analysis Report</div>
+        <div style="font-size:11px;color:var(--muted);font-weight:600" id="rp-sub">Includes Five Forces scores, Socratic dialogue log &amp; Hallucination Log (MBA submission ready)</div>
+      </div>
+    </div>
+    <div class="data-notice">⚠️ <span id="rp-notice">All report data sourced from user-provided research report; all conclusions traceable to specific report data points</span></div>
+    <button class="generate-btn" onclick="generateReport()">🍳 <span id="gen-btn-txt">Generate Report</span></button>
+    <div id="reportContent" style="margin-top:20px"></div>
+    <div id="halLog" style="margin-top:22px"></div>
+  </div>
+
+</div><!-- end right -->
+</div><!-- end main -->
+</div><!-- end app -->
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Score Basis</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// BILINGUAL STRINGS
+// ─────────────────────────────────────────────
+const LANG = {
+  en: {
+    title:'Restaurant Profit Simulator', sub:'Porter\'s Five Forces · HK F&B 2024–2026',
+    pTitle:'My Business Plan', pDesc:'Set decisions → instant Five Forces update',
+    lBudget:'① Initial Budget', lCost:'② Cost Allocation', lComp:'③ Core Competency', lLocSeg:'④ Location & Target Segment',
+    llLoc:'Location', llSeg:'Target Segment',
+    bLow:'HK$100K–500K (Light asset entry)', bMid:'HK$500K–1M (Mid-scale standard)', bHigh:'HK$1M+ (Scaled investment)',
+    cFoodheavy:'Food-heavy (Food 45% / Rent 30% / Fitout 25%)', cBalanced:'Balanced (Food 35% / Rent 35% / Fitout 30%)', cAmbiance:'Ambiance-heavy (Food 25% / Rent 25% / Fitout 50%)',
+    compSig:'🍽️ Signature Dishes (Differentiation)', compVal:'💎 Value-for-Money (Mass market)', compLux:'✨ Premium Ambiance (Experience premium)', compSup:'🔗 Exclusive Supply Chain (Cost moat)',
+    locCom:'🏘️ Community', locCBD:'🏙️ Commercial', segMass:'👥 Mass', segPrem:'🌟 Premium',
+    clFood:'Food & Ingredients', clRent:'Rent', clFitout:'Fitout & Renovation',
+    ssLabel:'PROFIT SCORE', scoreVerdictInit:'Complete setup to see score',
+    ffS:'Supplier Power', ffB:'Buyer Power', ffE:'New Entrants', ffSub:'Substitutes', ffR:'Rivalry',
+    tabR:'Rivalry', tabE:'New Entrants', tabS:'Suppliers', tabB:'Buyers', tabSub:'Substitutes', tabSc:'Score Board', tabRp:'Report',
+    fnRivals:'Rivalry Among Existing Competitors', fnEntrants:'Threat of New Entrants', fnSuppliers:'Bargaining Power of Suppliers', fnBuyers:'Bargaining Power of Buyers', fnSubs:'Threat of Substitutes',
+    dnRivals:'All data sourced from: User-provided research report (HK F&B Porter\'s Five Forces Strategic Research Report, 2024–2026)',
+    scTitle:'Score Board', scSub:'Scoring basis: Your decisions + User-provided research report data',
+    scoreNoticeTxt:'Please complete all five settings in "My Business Plan" on the left to generate scores.',
+    rpTitle:'Restaurant Profit Analysis Report', rpSub:'Includes Five Forces scores, Socratic dialogue log & Hallucination Log (MBA submission ready)',
+    rpNotice:'All report data sourced from user-provided research report; all conclusions traceable to specific report data points',
+    genBtnTxt:'Generate Report',
+    scoreSrc:'Scoring basis: User decisions + User-provided research report data',
+    // Verdicts
+    v80:'Profitability Very High ✦', v60:'Profitability Moderate ◆', v40:'Profitability Low ▲',
+    fb80Title:'Score {n} — Profitability Very High',
+    fb80:'Five Forces overall weak; decision-strategy fit is high. Supplier cost volatility moderate (food CPI +0.7%); differentiated positioning effectively offsets high buyer bargaining power; competitor landscape shows structural growth opportunity in non-Chinese segment (+4.0%).',
+    fb60Title:'Score {n} — Moderate Profitability · Optimise Key Decisions',
+    fb40Title:'Score {n} — Low Profitability',
+    fbSrc:'Scoring basis: User decisions + Research report data (C&SD / FEHD / Knight Frank / USDA FAS)',
+    socLabel:'Socratic Guided Question ·',
+    socSrcNote:'Question basis: User-provided research report data | Record usable for MBA Socratic dialogue submission',
+    socPlaceholder:'Enter your response here… (will be saved to dialogue log)',
+    socSubmit:'Submit →',
+    socAILabel:'AI Guidance (Based on Research Report):',
+    socSaved:'✓ This dialogue has been logged for MBA submission',
+    // Socratic questions
+    socQ:{
+      high:'Your decision set achieved a high score, yet the report shows industry receipt volume still fell −0.9% in 2025, and northbound departures surged from 53.6M (2023) to 87.1M (2025). Combining the report\'s "structural demand leakage" (Buyers) and "first annual net outlet contraction" (Rivalry), how might these two macro-structural forces affect your actual profitability forecast — even when the Five Forces combination appears favourable?',
+      medium:'Per the research report, one key driver of high buyer bargaining power is KeeTa\'s 44% market share capture through aggressive subsidies, pushing platform penetration to 38% and conditioning consumers to discount-driven behaviour. Do you think shifting your core competency (e.g. from value-for-money to signature dish differentiation) could meaningfully reduce the Buyer Power score? How would this adjustment linkage affect the Rivalry score?',
+      low:'The report shows: Chinese restaurants\' receipt volume fell −4.3% in 2025 while non-Chinese grew +4.0%; standard platform commission is 30%, forcing 40–50% menu price markups for delivery viability. Given your current score, can your chosen budget and competency combination realistically achieve break-even under dual pressure from high Buyer Power (northbound leakage + discount habits) and high Rivalry (net outlet contraction)?'
+    },
+    socResp:{
+      high:'You\'ve identified the core limitation of the Five Forces framework: it analyses "competitive structure," not "demand scale." Even with a favourable Five Forces combination, if aggregate market demand continues to structurally shrink (northbound departures: 53.6M → 87.1M), profitability forecasts must incorporate total market volume data (report: nominal +0.2% but real volume −0.9%). The key follow-up: does your location and target segment precisely align with an identifiable growth sub-segment within the data (e.g. non-Chinese, premium positioning) — rather than competing in the shrinking mass market?',
+      medium:'Your analytical direction is correct. Differentiation (signature dishes) can reduce buyer price sensitivity, thereby lowering the Buyer Power score. But the report\'s data signals a linkage effect: if your differentiation succeeds in attracting premium customers, existing competitors may adjust strategies to follow suit — potentially keeping Rivalry scores elevated rather than reduced. Additionally, the 30% platform commission structural problem persists regardless of your positioning choice. Which Five Forces dimension improvement would have the highest leverage effect on your composite profit score?',
+      low:'You\'ve identified the core contradiction. The report supports: with both Buyer Power (northbound + delivery) and Rivalry (net contraction + volume decline) at high levels, achieving break-even becomes structurally difficult. The industry average margin is already ~23% (vs. Vietnam 38%), indicating structural pressure beyond individual decision optimisation. Two report-supported optimisation paths: ① "Exclusive Supply Chain" — systematically lowers Supplier score and builds a defensible moat; ② "Signature dishes + Premium + Commercial" — aligns with the non-Chinese growth sub-segment (+4.0%). Which path better matches your actual resource capability?'
+    },
+    socType:{high:'Linked Thinking',medium:'Decision Optimisation',low:'Logic Verification'},
+    // Score card labels
+    scardS:'Supplier Bargaining Power', scardB:'Buyer Bargaining Power', scardE:'New Entrant Threat', scardSub:'Substitute Threat', scardR:'Rivalry Intensity',
+    clickBasis:'(click to view full basis)',
+    // Report sections
+    rpS1:'I. Business Plan Settings', rpS2:'II. Porter\'s Five Forces Scores (Basis: User-provided research report)',
+    rpS3:'III. Industry Attractiveness Summary (Direct quote from research report)',
+    rpS4:'IV. Structural Risks (From research report)',
+    rpS5:'V. Socratic Dialogue Log (MBA Submission)',
+    rpS6:'VI. Data Source Summary Table',
+    halTitle:'Hallucination Log — Self-Audit Record (MBA Submission)',
+    // Report table headers
+    thSetting:'Setting', thValue:'Selected Value', thDimension:'Dimension', thScore:'Score (/10)', thWeight:'Weight', thContrib:'Weighted Contribution', thIntensity:'Intensity',
+    thType:'Type', thQ:'AI Question (excerpt)', thA:'User Response (excerpt)', thG:'AI Guidance (excerpt)', thTime:'Time',
+    thInstitution:'Institution', thDoc:'Report / Document', thPeriod:'Reference Period',
+    // Verdicts for table
+    vHigh:'High', vMid:'Medium', vLow:'Low',
+    // Budget labels
+    bLLow:'HK$100K–500K', bLMid:'HK$500K–1M', bLHigh:'HK$1M+',
+    cLFoodheavy:'Food-heavy (Food 45% / Rent 30% / Fitout 25%)', cLBalanced:'Balanced (Food 35% / Rent 35% / Fitout 30%)', cLAmbiance:'Ambiance-heavy (Food 25% / Rent 25% / Fitout 50%)',
+    compLSig:'Signature Dishes', compLVal:'Value-for-Money', compLLux:'Premium Ambiance', compLSup:'Exclusive Supply Chain',
+    locLCom:'Community', locLCBD:'Commercial', segLMass:'Mass', segLPrem:'Premium',
+    // Overall verdict
+    profHigh:'Profitability Very High', profMid:'Profitability Moderate', profLow:'Profitability Low',
+    // Industry summary
+    industrySummary:'The Hong Kong licensed restaurant industry currently exhibits very low attractiveness due to the irreversible leakage of consumer demand to Mainland China and the severe profit margin compression caused by rigid labor costs and dominant delivery platform commissions.',
+    inSumSrc:'Source: User-provided research report — Industry Attractiveness Summary (direct quote)',
+    risk1Label:'Risk 1: Permanent Cross-Border Demand Leakage', risk1:'Departures surged to 87.1M in 2025 (2023: 53.6M); trade bodies describe this as "totally irreversible"',
+    risk1Src:'Source: SCMP Research / Official data (as cited in research report)',
+    risk2Label:'Risk 2: Labour Cost vs. Sector Profitability Imbalance', risk2:'HK F&B average profit margin 23% (Vietnam: 38%); F&B unemployment rose to 6.4% mid-2025 yet premium wages still required',
+    risk2Src:'Source: Restroworks (as cited in research report)',
+    risk3Label:'Risk 3: Delivery Platform Margin Erosion', risk3:'Standard commission ~30%; restaurants must mark up delivery menus 40–50%, long-term damaging brand loyalty',
+    risk3Src:'Source: Industry survey (as cited in research report)',
+    socNoRecord:'No Socratic dialogue recorded yet — please complete the guided question interaction in the Score Board tab first',
+    reportDate:'Report generated:', dataNote:'Sole data basis: User-provided research report',
+    // Hallucination log entries
+    hal1Label:'✓ Verified — Data Integrity', hal1:'All core Five Forces data points (87.1M northbound departures, HK$109.6B market size, −0.9% volume decline, 38% delivery penetration, 30% platform commission, 95% import dependency, +0.7% CPI, 26% first-year failure rate, −0.5% commercial rent change, HK$433M Fairwood PP&E) fully correspond to research report stated data. No data beyond report scope used.',
+    hal2Label:'⚠ Flagged — [DATA UNAVAILABLE] Items', hal2:'Substitutes dimension: supermarket cooked food sales figure (2023) and food e-commerce revenue forecast (2025) not fully presented in current report version — flagged per Missing Data Protocol. No estimation performed.',
+    hal3Label:'✓ Verified — Scope Compliance', hal3:'Delivery penetration rate (38%) and KeeTa market share (44%) correctly assigned to "Bargaining Power of Buyers" (Module 4), not Substitutes (Module 5). Consistent with report definition: delivery is an internal restaurant channel, not a substitute.',
+    hal4Label:'✓ Verified — Source Attribution', hal4:'All data attributed to specific institutions and report titles (C&SD, FEHD, USDA FAS, Knight Frank, Fairwood Annual Report, PBOC Shenzhen). No "online sources", "publicly available data" or unattributable citations used.',
+    hal5Label:'✓ Verified — Scoring Logic', hal5:'All Five Forces scores calibrated to report intensity rating standard (High / Medium / Low per defined conditions). Score adjustment logic strictly maps to user decisions and report data. No scoring scenarios beyond report scope created.',
+    // Adapt card labels
+    adCompRival:'Competition-Positioning Alignment', adLocEntry:'Location × Entry Barrier Alignment', adSupply:'Competency × Supplier Alignment', adBuyer:'Segment × Buyer Power Alignment', adSub:'Segment × Substitute Alignment',
+    noticeReport:'Please complete all Business Plan settings before generating report.',
+    // Modal labels
+    modalScoreLabel:'Five Forces Score', modalWeightLabel:'Current Weight', modalBasisLabel:'Full Scoring Basis (Source: User-provided research report)',
+    modalCriteriaLabel:'Intensity Rating Criteria', modalCriteriaText:'Per research report: High (≥3 data points indicate strong pressure), Medium (mixed signals), Low (≥3 data points indicate weak pressure). All scores fully traceable to report data.',
+    modalSrcDecl:'Scoring basis: User decisions + User-provided research report (HK F&B Porter\'s Five Forces Strategic Research Report, 2024–2026)',
+    // Score badge
+    badgeLabel:'Score'
+  },
+  zh: {
+    title:'開餐廳盈利可能性分析', sub:'波特五力模擬工具 · 香港飲食業 2024–2026',
+    pTitle:'我的基本盤', pDesc:'完成設置後即時聯動五力分析',
+    lBudget:'① 初始預算', lCost:'② 成本分配', lComp:'③ 核心競爭力', lLocSeg:'④ 選址 ＆ 目標客群',
+    llLoc:'選址', llSeg:'目標客群',
+    bLow:'HK$10萬–50萬（輕資產入場）', bMid:'HK$50萬–100萬（中型標準）', bHigh:'HK$100萬以上（規模化投入）',
+    cFoodheavy:'食材偏重型（食材45% / 租金30% / 裝修25%）', cBalanced:'均衡配置型（食材35% / 租金35% / 裝修30%）', cAmbiance:'環境偏重型（食材25% / 租金25% / 裝修50%）',
+    compSig:'🍽️ 特色菜品（差異化定位）', compVal:'💎 性價比（大眾消費導向）', compLux:'✨ 高端裝修（環境體驗溢價）', compSup:'🔗 獨家食材供應鏈（成本護城河）',
+    locCom:'🏘️ 社區', locCBD:'🏙️ 商圈', segMass:'👥 大眾', segPrem:'🌟 中高端',
+    clFood:'食材採購', clRent:'租金', clFitout:'裝修',
+    ssLabel:'綜合盈利評分', scoreVerdictInit:'請完成基本盤設置',
+    ffS:'供應商議價能力', ffB:'購買者議價能力', ffE:'新進入者威脅', ffSub:'替代品威脅', ffR:'現有競爭者強度',
+    tabR:'現有競爭者', tabE:'新進入者', tabS:'供應商', tabB:'購買者', tabSub:'替代品', tabSc:'評分看板', tabRp:'分析報告',
+    fnRivals:'現有競爭者競爭強度', fnEntrants:'新進入者威脅', fnSuppliers:'供應商議價能力', fnBuyers:'購買者議價能力', fnSubs:'替代品威脅',
+    dnRivals:'⚠ 以下所有數據來源：用戶提供的調研報告數據（香港持牌飲食業波特五力分析報告，2024–2026）',
+    scTitle:'綜合評分看板', scSub:'評分依據：用戶決策 ＋ 用戶提供的調研報告數據',
+    scoreNoticeTxt:'請先完成左側「我的基本盤」所有五項設置，系統將自動生成五力評分及盈利反饋。',
+    rpTitle:'開餐廳盈利分析報告', rpSub:'含五力評分、蘇格拉底對話記錄及幻覺自查日誌（MBA作業交付）',
+    rpNotice:'所有報告數據均源於用戶提供的調研報告；評分依據為報告五力評分標準；所有結論可追溯至報告具體數據',
+    genBtnTxt:'生成分析報告',
+    scoreSrc:'評分依據：用戶決策 ＋ 用戶提供的調研報告數據',
+    v80:'盈利可能性極高 ✦', v60:'盈利可能性中等 ◆', v40:'盈利可能性較低 ▲',
+    fb80Title:'綜合盈利評分 {n} — 盈利可能性極高',
+    fb80:'五力整體偏弱，決策與市場環境匹配度高。供應商成本波動溫和（食品CPI +0.7%），差異化定位有效對沖購買者高議價壓力，競爭者格局在結構重塑中出現中高端細分機會（非中式逆增+4.0%）。',
+    fb60Title:'綜合評分 {n} — 盈利可能性中等，需優化部分決策',
+    fb40Title:'綜合評分 {n} — 盈利可能性較低',
+    fbSrc:'評分依據：用戶決策 ＋ 調研報告五力數據（政府統計處/FEHD/Knight Frank/美農部）',
+    socLabel:'蘇格拉底式引導提問 ·',
+    socSrcNote:'提問依據：用戶提供的調研報告數據 | 記錄可用於MBA蘇格拉底對話交付物',
+    socPlaceholder:'請輸入您的思考回應…（回應將存入對話記錄）',
+    socSubmit:'提交回應 →',
+    socAILabel:'AI引導回應（依據：調研報告數據）：',
+    socSaved:'✓ 本對話已納入蘇格拉底對話存檔，可用於MBA作業交付',
+    socQ:{
+      high:'您的決策取得較高評分，但報告數據顯示香港2025年全行業實際收貨量仍下跌0.9%，且北上消費出行量從2023年的5,360萬急升至8,710萬人次。結合報告中購買者維度的「結構性需求流失」與競爭者維度的「網點首次年度淨收縮」，您認為即使五力組合偏弱，這兩個宏觀結構性因素如何可能影響您的實際盈利預測？',
+      medium:'根據調研報告數據，購買者議價能力評分偏高的核心原因之一是KeeTa以積極補貼佔據外賣市場44%份額，令消費者形成折扣驅動消費習慣（滲透率38%）。您認為調整核心競爭力設置（例如從性價比轉向特色菜品差異化），能否有效降低購買者議價能力評分？這一調整會如何聯動影響現有競爭者競爭強度的評分？',
+      low:'報告數據顯示：中式餐廳2025年收貨量按年跌4.3%，而非中式逆增4.0%；外賣平台標準佣金率30%，維持外賣業務須加價40–50%。結合當前評分，您認為現有的預算與核心競爭力組合，能否在「購買者議價能力高（北上分流+折扣習慣）」與「競爭者強度高（網點淨收縮）」的雙重壓力下實現盈虧平衡？'
+    },
+    socResp:{
+      high:'您的思考觸及了波特五力模型的核心局限性：五力分析評估的是「競爭格局」而非「需求規模」。即使在五力偏弱的組合下，若整體市場需求持續結構性流失（報告：北上出行從5,360萬增至8,710萬人次），盈利預測仍需結合市場總量數據修正。報告同時顯示非中式細分逆增+4.0%，說明市場內部存在結構性機會。下一步思考：您的選址與目標客群設定，是否精準對齊了這個增長子集？',
+      medium:'您的分析框架正確。差異化策略（特色菜品）可降低購買者對折扣的敏感度，進而降低其議價能力評分。但報告數據提示聯動效應：若差異化定位成功，現有競爭者可能調整策略跟進，使競爭強度評分不降反升。此外，報告明確指出外賣佣金30%的結構問題與定位選擇無關。您認為哪個五力維度的改善，對提升綜合盈利評分具有最大槓桿效應？',
+      low:'您識別了核心矛盾。報告數據支持：在購買者（北上+外賣）與競爭者（網點淨收縮+量跌）雙重壓力下，盈虧平衡難度顯著上升。行業平均利潤率已低至23%（遠低於越南38%），說明整體結構性壓力已超越個體決策可優化的範圍。兩條報告數據支撐的優化路徑：①「獨家食材供應鏈」降低供應商評分並建立壁壘；②「特色菜品+中高端+商圈」對齊非中式增長細分。哪條路徑更符合您的實際資源能力？'
+    },
+    socType:{high:'聯動思考類',medium:'決策優化類',low:'邏輯核查類'},
+    scardS:'供應商議價能力', scardB:'購買者議價能力', scardE:'新進入者威脅', scardSub:'替代品威脅', scardR:'現有競爭者競爭強度',
+    clickBasis:'（點擊查看完整依據）',
+    rpS1:'一、基本盤設置', rpS2:'二、波特五力評分（依據：用戶提供的調研報告數據）',
+    rpS3:'三、行業吸引力總結（引自調研報告原文）',
+    rpS4:'四、結構性風險（引自調研報告）',
+    rpS5:'五、蘇格拉底對話記錄（MBA作業交付）',
+    rpS6:'六、數據來源彙總表',
+    halTitle:'Hallucination Log — 幻覺自查記錄（MBA作業交付）',
+    thSetting:'設置項', thValue:'選擇值', thDimension:'維度', thScore:'評分（/10）', thWeight:'權重', thContrib:'加權貢獻', thIntensity:'強度評定',
+    thType:'類型', thQ:'AI提問（摘要）', thA:'用戶回應（摘要）', thG:'AI引導（摘要）', thTime:'時間',
+    thInstitution:'機構', thDoc:'報告/文件名稱', thPeriod:'參考期',
+    vHigh:'高 High', vMid:'中 Medium', vLow:'低 Low',
+    bLLow:'HK$10萬–50萬', bLMid:'HK$50萬–100萬', bLHigh:'HK$100萬以上',
+    cLFoodheavy:'食材偏重型（食材45%/租金30%/裝修25%）', cLBalanced:'均衡配置型（食材35%/租金35%/裝修30%）', cLAmbiance:'環境偏重型（食材25%/租金25%/裝修50%）',
+    compLSig:'特色菜品', compLVal:'性價比', compLLux:'高端裝修', compLSup:'獨家食材供應鏈',
+    locLCom:'社區', locLCBD:'商圈', segLMass:'大眾', segLPrem:'中高端',
+    profHigh:'盈利可能性極高', profMid:'盈利可能性中等', profLow:'盈利可能性較低',
+    industrySummary:'香港持牌餐飲業目前整體吸引力偏低，主要驅動因素為：消費者需求不可逆地流向內地市場，以及剛性勞工成本和外賣平台佣金造成的嚴重利潤壓縮。',
+    inSumSrc:'來源：用戶提供的調研報告 — Industry Attractiveness Summary（原文直引）',
+    risk1Label:'風險一：北上消費需求永久流失', risk1:'2025年出行量達8,710萬人次（2023年：5,360萬），貿易機構定性為「完全不可逆轉」',
+    risk1Src:'來源：SCMP研究/官方數據（調研報告引用）',
+    risk2Label:'風險二：勞工成本與行業盈利失衡', risk2:'香港飲食業平均利潤率23%（越南：38%）；飲食業失業率2025年中升至6.4%，仍須支付溢價薪酬留才',
+    risk2Src:'來源：Restroworks（調研報告引用）',
+    risk3Label:'風險三：外賣平台佣金侵蝕利潤率', risk3:'標準佣金率約30%，餐廳須加價40–50%維持外賣可行性，長期損害品牌忠誠度',
+    risk3Src:'來源：行業調查（調研報告引用）',
+    socNoRecord:'尚未記錄蘇格拉底對話，請先在評分看板完成提問互動',
+    reportDate:'報告生成日期：', dataNote:'數據唯一依據：用戶提供的調研報告數據',
+    hal1Label:'✓ 已核查 — 數據完整性', hal1:'五力所有核心數據（8,710萬人次北上出行、HK$1,096億市場規模、-0.9%量跌、38%外賣滲透率、30%平台佣金、95%進口依存、+0.7% CPI、26%首年失業率、-0.5%商區租金、HK$4.33億大快活資產）均完整對應調研報告載明數據，未超出報告範圍。',
+    hal2Label:'⚠ 已標記 — [DATA UNAVAILABLE] 項目', hal2:'替代品維度：超市熟食銷售額具體數字（2023年）及食品電商具體收入預測（2025年），在現有報告版本中未完整呈現，已按報告Missing Data Protocol標記[DATA UNAVAILABLE]，未擅自估算。',
+    hal3Label:'✓ 已核查 — 邊界合規', hal3:'外賣滲透率（38%）及KeeTa市佔（44%）嚴格歸入「購買者議價能力」（Module 4），未列入替代品維度（Module 5）。符合報告界定：外賣為餐廳業內部渠道，不屬替代品。',
+    hal4Label:'✓ 已核查 — 來源屬性合規', hal4:'所有數據均標注具體機構及報告名稱（C&SD、FEHD、USDA FAS、Knight Frank、大快活年報、PBOC深圳）。未使用「網絡資料」、「公開數據」或任何不可追溯表述。',
+    hal5Label:'✓ 已核查 — 評分邏輯合規', hal5:'所有五力評分以調研報告強度評定標準為依據（High/Medium/Low對應報告界定），評分調整邏輯嚴格對應用戶決策與報告數據，未創設報告未提及的評分場景。',
+    adCompRival:'競爭力×選址適配', adLocEntry:'選址×新進入者壁壘適配', adSupply:'競爭力×供應商適配', adBuyer:'客群×購買者議價適配', adSub:'客群×替代品適配',
+    noticeReport:'請先完成所有基本盤設置後再生成報告。',
+    modalScoreLabel:'五力評分', modalWeightLabel:'當前權重', modalBasisLabel:'完整評分依據（來源：用戶提供的調研報告）',
+    modalCriteriaLabel:'強度評定標準', modalCriteriaText:'嚴格依據調研報告：High（≥3個數據點指向強壓力）、Medium（正負因素大致平衡）、Low（≥3個數據點指向弱壓力）。所有評分可追溯至報告具體數據。',
+    modalSrcDecl:'評分依據：用戶決策 ＋ 用戶提供的調研報告數據（香港持牌飲食業波特五力分析報告，2024–2026）',
+    badgeLabel:'綜合評分'
+  }
+};
+
+let LANG_CUR = 'en';
+
+function t(key){ return LANG[LANG_CUR][key] || LANG.en[key] || key; }
+
+function setLang(lang){
+  LANG_CUR = lang;
+  document.getElementById('btn-en').classList.toggle('active', lang==='en');
+  document.getElementById('btn-zh').classList.toggle('active', lang==='zh');
+  applyLang();
+  updateAll();
+}
+
+function applyLang(){
+  const L = LANG[LANG_CUR];
+  // Topbar
+  document.getElementById('t-title').textContent = L.title;
+  document.getElementById('t-sub').textContent = L.sub;
+  // Left panel
+  document.getElementById('p-title').textContent = L.pTitle;
+  document.getElementById('p-desc').textContent = L.pDesc;
+  document.getElementById('l-budget').textContent = L.lBudget;
+  document.getElementById('l-cost').textContent = L.lCost;
+  document.getElementById('l-comp').textContent = L.lComp;
+  document.getElementById('l-locSeg').textContent = L.lLocSeg;
+  document.getElementById('ll-location').textContent = L.llLoc;
+  document.getElementById('ll-segment').textContent = L.llSeg;
+  document.getElementById('b-low').textContent = L.bLow;
+  document.getElementById('b-mid').textContent = L.bMid;
+  document.getElementById('b-high').textContent = L.bHigh;
+  document.getElementById('c-foodheavy').textContent = L.cFoodheavy;
+  document.getElementById('c-balanced').textContent = L.cBalanced;
+  document.getElementById('c-ambiance').textContent = L.cAmbiance;
+  document.getElementById('comp-sig').textContent = L.compSig;
+  document.getElementById('comp-val').textContent = L.compVal;
+  document.getElementById('comp-lux').textContent = L.compLux;
+  document.getElementById('comp-sup').textContent = L.compSup;
+  document.getElementById('loc-com').textContent = L.locCom;
+  document.getElementById('loc-cbd').textContent = L.locCBD;
+  document.getElementById('seg-mass').textContent = L.segMass;
+  document.getElementById('seg-prem').textContent = L.segPrem;
+  document.getElementById('cl-food').textContent = L.clFood;
+  document.getElementById('cl-rent').textContent = L.clRent;
+  document.getElementById('cl-fitout').textContent = L.clFitout;
+  document.getElementById('ss-label').textContent = L.ssLabel;
+  // score verdict only if not set yet
+  if(!S.budget) document.getElementById('scoreVerdict').textContent = L.scoreVerdictInit;
+  document.getElementById('ff-s').textContent = L.ffS;
+  document.getElementById('ff-b').textContent = L.ffB;
+  document.getElementById('ff-e').textContent = L.ffE;
+  document.getElementById('ff-sub').textContent = L.ffSub;
+  document.getElementById('ff-r').textContent = L.ffR;
+  // Tabs
+  document.getElementById('tab-r-lbl').textContent = L.tabR;
+  document.getElementById('tab-e-lbl').textContent = L.tabE;
+  document.getElementById('tab-s-lbl').textContent = L.tabS;
+  document.getElementById('tab-b-lbl').textContent = L.tabB;
+  document.getElementById('tab-sub-lbl').textContent = L.tabSub;
+  document.getElementById('tab-sc-lbl').textContent = L.tabSc;
+  document.getElementById('tab-rp-lbl').textContent = L.tabRp;
+  // Force names (English subtitles stay always)
+  document.getElementById('fn-rivals').textContent = L.fnRivals;
+  document.getElementById('fn-entrants').textContent = L.fnEntrants;
+  document.getElementById('fn-suppliers').textContent = L.fnSuppliers;
+  document.getElementById('fn-buyers').textContent = L.fnBuyers;
+  document.getElementById('fn-substitutes').textContent = L.fnSubs;
+  // Data notices
+  ['rivals','entrants','suppliers','buyers','substitutes'].forEach(k=>{
+    const el = document.getElementById('dn-'+k);
+    if(el) el.textContent = L['dnRivals']; // same notice for all
+  });
+  // Score board
+  document.getElementById('sc-title').textContent = L.scTitle;
+  document.getElementById('sc-sub').textContent = L.scSub;
+  document.getElementById('score-notice-txt').textContent = L.scoreNoticeTxt;
+  // Report
+  document.getElementById('rp-title').textContent = L.rpTitle;
+  document.getElementById('rp-sub').textContent = L.rpSub;
+  document.getElementById('rp-notice').textContent = L.rpNotice;
+  document.getElementById('gen-btn-txt').textContent = L.genBtnTxt;
+  // Badge
+  const badge = document.getElementById('topScoreBadge');
+  if(S.scores.s) badge.textContent = L.badgeLabel+' '+(composite(S.scores,S.weights));
+  else badge.textContent = L.badgeLabel+' —';
+}
+
+// ─────────────────────────────────────────────
+// STATE & SCORING (unchanged from original)
+// ─────────────────────────────────────────────
+const S = { budget:null,cost:null,comp:null,location:null,segment:null,
+  scores:{s:null,b:null,e:null,sub:null,r:null},
+  weights:{s:.15,b:.25,e:.15,sub:.15,r:.30}, socLog:[], answered:false };
+
+const COST_MAP = { foodheavy:[45,30,25], balanced:[35,35,30], ambiance:[25,25,50] };
+
+function pick(group,val,btn){
+  S[group]=val;
+  document.querySelectorAll('[data-group="'+group+'"]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(group==='cost'){
+    const[f,r,d]=COST_MAP[val];
+    document.getElementById('costBars').style.display='block';
+    ['c1','c2','c3'].forEach((id,i)=>document.getElementById(id).textContent=[f,r,d][i]+'%');
+    ['b1','b2','b3'].forEach((id,i)=>{document.getElementById(id).style.width=[f,r,d][i]+'%'});
+  }
+  updateAll();
+}
+
+function calcScores(){
+  const{budget,cost,comp,location,segment}=S;
+  if(!budget||!cost||!comp||!location||!segment) return null;
+  let s=6;
+  if(comp==='supply') s-=1.5;
+  if(cost==='foodheavy') s+=.5;
+  if(budget==='high') s-=.5;
+  let b=8;
+  if((comp==='signature'||comp==='luxury')&&segment==='premium') b-=1;
+  if(comp==='value'&&segment==='mass') b+=.5;
+  if(location==='community') b-=.3;
+  let e=5;
+  if(budget==='high') e-=.5;
+  if(location==='commercial') e+=.5;
+  if(comp==='supply') e-=1;
+  let sub=6;
+  if(comp==='signature'||comp==='luxury') sub-=.5;
+  if(segment==='mass') sub+=.5;
+  if(location==='community') sub+=.3;
+  let r=7.5;
+  if(comp==='signature'&&segment==='premium') r-=.5;
+  if(comp==='value'&&segment==='mass') r+=.5;
+  if(location==='commercial') r+=.5;
+  if(budget==='high') r-=.3;
+  const round=x=>Math.round(Math.min(10,Math.max(1,x))*10)/10;
+  return{s:round(s),b:round(b),e:round(e),sub:round(sub),r:round(r)};
+}
+
+function calcWeights(){
+  const w={s:.15,b:.25,e:.15,sub:.15,r:.30};
+  if(S.comp==='supply'){w.s=.20;w.b=.20;w.e=.15;w.sub=.15;w.r=.30}
+  if(S.comp==='value'){w.b=.30;w.r=.30;w.e=.10;w.sub=.10;w.s=.20}
+  const tot=Object.values(w).reduce((a,b)=>a+b,0);
+  Object.keys(w).forEach(k=>w[k]=Math.round(w[k]/tot*100)/100);
+  return w;
+}
+
+function composite(sc,wt){
+  return Math.round(100-(sc.s*wt.s+sc.b*wt.b+sc.e*wt.e+sc.sub*wt.sub+sc.r*wt.r)*10);
+}
+
+function updateAll(){
+  const sc=calcScores(); if(!sc) return;
+  S.scores=sc; S.weights=calcWeights();
+  const total=composite(sc,S.weights);
+  document.getElementById('mainScore').textContent=total;
+  const col=total>=80?'#fff':total>=60?'#fef08a':'#fca5a5';
+  document.getElementById('mainScore').style.color=col;
+  const L=LANG[LANG_CUR];
+  document.getElementById('scoreVerdict').textContent=total>=80?L.v80:total>=60?L.v60:L.v40;
+  const badge=document.getElementById('topScoreBadge');
+  badge.textContent=L.badgeLabel+' '+total;
+  badge.classList.add('updating'); setTimeout(()=>badge.classList.remove('updating'),350);
+  ['s','b','e','sub','r'].forEach(k=>{
+    const c=sc[k]>=7?'#f87171':sc[k]>=5?'#fbbf24':'#86efac';
+    document.getElementById('bar-'+k).style.width=(sc[k]*10)+'%';
+    document.getElementById('bar-'+k).style.background=c;
+    document.getElementById('num-'+k).textContent=sc[k].toFixed(1);
+  });
+  renderScoring(sc,S.weights,total);
+  renderAdapt();
+}
+
+const FORCE_KEYS = ['s','b','e','sub','r'];
+const FORCE_EMOJIS = {s:'🏭',b:'👥',e:'🚪',sub:'🔄',r:'⚔️'};
+const FORCE_BASIS_EN={
+  s:'Research report (Suppliers): ① 95% food import dependency — highly exposed to global commodity shocks (USDA FAS 2025); ② DCH represents 100+ brands, Ng Fung Hong dominates fresh meat — concentrated distribution; ③ Basic food CPI +0.7% in Dec 2025 — mild inflation temporarily moderates pressure.',
+  b:'Research report (Buyers): ① 87.1M northbound departures 2025; estimated HK$55.7B Mainland spend 2024 — trade bodies: "totally irreversible"; ② Visitor per-capita spend −30% vs. 2018; ③ Delivery platform penetration 38%, KeeTa 44% share — discount-conditioned consumers; ④ 126M cashless transactions in Shenzhen cement northbound spending habits.',
+  e:'Research report (New Entrants): ① PCS system: 2 working-day licence issuance (vs. 20 days under AVP — 90% reduction); ② ~26% first-year restaurant failure rate; ③ Prime commercial rent −0.5% 2025 — lowers entry costs (for all players); ④ Fairwood PP&E HK$433M illustrates scale capital requirements.',
+  sub:'Research report (Substitutes): ① Supermarkets + convenience stores = 55% of food retail; ② Takeaway-only outlets grew 39% 2014–2024, priced HK$30–50; ③ Food e-commerce and supermarket cooked food sales figures flagged [DATA UNAVAILABLE] in report — no estimation performed.',
+  r:'Research report (Rivalry): ① 2025 receipt volume −0.9% (flat value, shrinking volume); ② First annual net outlet contraction since 2018; ③ Chinese restaurants: revenue −2.9%, volume −4.3%; ④ Food costs 31.9% of revenue, labour 25–35%; ⑤ Delivery commission 30%, menu markup 40–50% required.'
+};
+const FORCE_BASIS_ZH={
+  s:'依據（調研報告供應商維度）：①香港95%食材依賴進口，高度暴露國際商品價格風險（USDA FAS 2025）；②大昌行代理逾百品牌、五豐行主導鮮肉供應，分銷渠道集中；③2025年12月基本食品CPI按年僅+0.7%，溫和通脹暫時緩解議價壓力。',
+  b:'依據（調研報告購買者維度）：①2025年港人北上出行8,710萬人次，2024年內地消費HK$557億（不含交通），貿易機構指不可逆轉；②訪港旅客人均消費較2018年降30%；③外賣平台滲透率38%，KeeTa以補貼奪44%份額，消費者高度折扣敏感；④港人在深非現金交易1.26億筆固化北上消費習慣。',
+  e:'依據（調研報告新進入者維度）：①PCS制度令牌照2個工作日發出（較舊制20日縮短90%）；②約26%新餐廳首年結業或易手；③核心商區零售租金微降0.5%降低入場成本；④大快活HK$4.33億廠房設備反映規模化所需資本強度。',
+  sub:'依據（調研報告替代品維度）：①超市+便利店佔食品零售55%；②外賣專門店10年增長39%，定價HK$30–50直接替代堂食；③食品電商及超市熟食銷售額具體數值在報告中未完整呈現，已標記[DATA UNAVAILABLE]。',
+  r:'依據（調研報告競爭者維度）：①2025年全年餐廳收貨量-0.9%（量跌）；②2018年後首次網點淨年度收縮；③中式餐廳量跌4.3%，非中式增4.0%；④食材採購佔收入31.9%，勞工成本佔25–35%；⑤外賣平台佣金30%，加價40–50%侵蝕品牌。'
+};
+
+function forceBasis(k){ return LANG_CUR==='zh' ? FORCE_BASIS_ZH[k] : FORCE_BASIS_EN[k]; }
+
+function renderScoring(sc,wt,total){
+  document.getElementById('scoreNotice').style.display='none';
+  document.getElementById('scoringContent').style.display='block';
+  const L=LANG[LANG_CUR];
+  const scardKeys={s:L.scardS,b:L.scardB,e:L.scardE,sub:L.scardSub,r:L.scardR};
+  let cards='';
+  FORCE_KEYS.forEach(k=>{
+    const col=sc[k]>=7?'var(--red-dark)':sc[k]>=5?'var(--yellow-dark)':'var(--green-dark)';
+    cards+=`<div class="score-card" onclick="showModal('${scardKeys[k]}','${forceBasis(k).replace(/'/g,"\\'").replace(/\n/g,' ')}',${sc[k]},${Math.round(wt[k]*100)})">
+      <div class="score-card-icon">${FORCE_EMOJIS[k]}</div>
+      <div class="score-card-label">${scardKeys[k]}</div>
+      <div class="score-card-num" style="color:${col}">${sc[k].toFixed(1)}</div>
+      <div class="score-card-weight">${L.ssLabel.split(' ')[0]==='PROFIT'?'Weight':'權重'} ${Math.round(wt[k]*100)}%</div>
+      <div class="score-card-basis">${forceBasis(k).substring(0,65)}… ${L.clickBasis}</div>
+    </div>`;
+  });
+  document.getElementById('scoreCards').innerHTML=cards;
+
+  // Feedback
+  let fc,ft,fb;
+  if(total>=80){
+    fc='feedback-high';ft=L.fb80Title.replace('{n}',total);fb=L.fb80;
+  } else if(total>=60){
+    fc='feedback-medium';ft=L.fb60Title.replace('{n}',total);
+    const top2=Object.entries(sc).sort((a,b)=>b[1]-a[1]).slice(0,2);
+    const tips_en={s:'Suppliers: Consider diversifying procurement to reduce DCH/Ng Fung concentration dependency',b:'Buyers: Strengthen experience differentiation to reduce direct competition with platform discount spending',e:'New Entrants: PCS lowered admin barriers — build harder-to-copy moats (e.g. exclusive supply chain)',sub:'Substitutes: Takeaway-only growth 39% — optimise positioning away from HK$30–50 direct competition',r:'Rivalry: Traditional positioning faces dual decline — tilt toward non-Chinese +4% growth sub-segment'};
+    const tips_zh={s:'供應商：考慮多元採購，降低對大昌行/五豐行集中分銷的依賴',b:'購買者：強化體驗差異化，減少與外賣平台折扣消費的直接競爭',e:'新進入者：PCS降低行政壁壘，需建立難以複製的核心護城河（如獨家供應鏈）',sub:'替代品：外賣專門店增39%，建議優化場景定位脫離HK$30–50價格帶直接競爭',r:'競爭者：傳統定位面臨量價雙跌，建議向非中式+4%增長細分傾斜'};
+    const tips=LANG_CUR==='zh'?tips_zh:tips_en;
+    fb=(LANG_CUR==='zh'?'核心優化點：':'Key optimisation points: ')+'① '+tips[top2[0][0]]+'; ② '+tips[top2[1][0]]+'.';
+  } else {
+    fc='feedback-low';ft=L.fb40Title.replace('{n}',total);
+    const top=Object.entries(sc).sort((a,b)=>b[1]-a[1])[0];
+    const re_en={b:`Buyer Power very high (${sc.b}): 87.1M northbound + 38% delivery penetration — current decisions unable to effectively retain customer flow`,r:`Rivalry very high (${sc.r}): Volume −0.9% + first net outlet contraction since 2018 — intense zero-sum competition`,s:`Supplier risk significant (${sc.s}): 95% import dependency + food-heavy cost structure — severe margin pressure`};
+    const re_zh={b:`購買者議價能力極高（${sc.b}分）：北上消費8,710萬人次+外賣38%滲透，當前決策難以有效截留客流`,r:`競爭者強度極高（${sc.r}分）：市場量跌0.9%+網點首次年度淨收縮，存量競爭劇烈`,s:`供應商議價風險顯著（${sc.s}分）：95%進口依存+食材偏重成本結構，利潤空間嚴重受壓`};
+    const re=LANG_CUR==='zh'?re_zh:re_en;
+    fb=(LANG_CUR==='zh'?'核心不盈利原因：':'Core cause: ')+(re[top[0]]||'Multi-force pressure — comprehensive decision review recommended')+'.';
+  }
+  document.getElementById('feedbackBox').innerHTML=`<div class="feedback-box ${fc}"><div class="feedback-title">${fc==='feedback-high'?'🎉':fc==='feedback-medium'?'⚠️':'🔴'} ${ft}</div><div class="feedback-body">${fb}</div><div class="feedback-source">${L.fbSrc}</div></div>`;
+  renderSocratic(total,sc);
+}
+
+function renderSocratic(total,sc){
+  const L=LANG[LANG_CUR];
+  const tier=total>=80?'high':total>=60?'medium':'low';
+  document.getElementById('socraticSection').innerHTML=`
+    <div class="socratic-box">
+      <div class="socratic-label">💬 ${L.socLabel} ${L.socType[tier]}</div>
+      <div class="socratic-q">${L.socQ[tier]}</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.6);font-weight:600;margin-bottom:8px">${L.socSrcNote}</div>
+      <textarea class="socratic-input" id="socraticInput" placeholder="${L.socPlaceholder}"></textarea>
+      <button class="socratic-submit" onclick="submitSocratic('${tier}')">${L.socSubmit}</button>
+      <div class="socratic-response" id="socraticResponse"></div>
+    </div>`;
+}
+
+function submitSocratic(tier){
+  const input=document.getElementById('socraticInput').value.trim();
+  if(!input) return;
+  const L=LANG[LANG_CUR];
+  const now=new Date().toLocaleString(LANG_CUR==='zh'?'zh-HK':'en-HK');
+  S.socLog.push({type:L.socType[tier],question:L.socQ[tier],answer:input,guidance:L.socResp[tier],time:now,lang:LANG_CUR});
+  const resp=document.getElementById('socraticResponse');
+  resp.style.display='block';
+  resp.innerHTML='<strong style="color:rgba(255,255,255,.8);font-size:9px;letter-spacing:1px;text-transform:uppercase">'+L.socAILabel+'</strong><br><br>'+L.socResp[tier]+'<br><br><span style="font-size:9px;color:rgba(255,255,255,.5)">'+L.socSaved+'</span>';
+}
+
+function renderAdapt(){
+  const{budget,location,comp,segment,cost}=S;
+  if(!budget||!location) return;
+  const L=LANG[LANG_CUR];
+  const bL={low:L.bLLow,mid:L.bLMid,high:L.bLHigh};
+  const lL={community:L.locLCom,commercial:L.locLCBD};
+
+  // Rivals
+  let ra='';
+  if(comp==='value'&&segment==='mass'){
+    const title=LANG_CUR==='zh'?'競爭最激烈組合':'Most contested positioning';
+    const body=LANG_CUR==='zh'?'報告數據：中式餐廳（傳統性價比定位）2025年量跌4.3%；外賣佣金30%疊加大眾折扣消費習慣，盈利空間最受壓縮。':'Report data: Chinese restaurants (traditional value positioning) saw −4.3% volume in 2025. Platform commission 30% compounded with mass-market discount habits creates maximum margin pressure.';
+    ra=mkAdapt(L.adCompRival,title,body,'Research report — Rivalry & Buyers dimensions');
+  } else if((comp==='signature'||comp==='luxury')&&segment==='premium'){
+    const title=LANG_CUR==='zh'?'對應結構性增長細分':'Aligns with structural growth sub-segment';
+    const body=LANG_CUR==='zh'?'報告顯示非中式餐廳2025年逆勢增長+4.0%；但旅客消費降30%，中高端定位需倚賴本地熟客，而非旅客流量。':'Report: Non-Chinese restaurants grew +4.0% in 2025. However, visitor per-capita spend −30% — premium positioning requires local loyal customers, not visitor traffic.';
+    ra=mkAdapt(L.adCompRival,title,body,'Research report — Rivalry & Buyers dimensions');
+  }
+  setAdapt('rivals-adapt',ra);
+
+  // Entrants
+  let ea='';
+  if(budget==='low'&&location==='community'){
+    const t=LANG_CUR==='zh'?'行政壁壘低但首年風險高':'Low admin barrier but high first-year risk';
+    const b=LANG_CUR==='zh'?'PCS制度令牌照2工作日發出；但約26%新餐廳首年結業，社區場地競爭者可快速跟進（同享低准入門檻）。':'PCS system: 2-day licence issuance. But ~26% first-year failure rate; community competitors equally benefit from low entry barriers — limited moat.';
+    ea=mkAdapt(L.adLocEntry,t,b,'Research report — New Entrants dimension (FEHD / BLS / Escoffier)');
+  } else if(budget==='mid'&&location==='commercial'){
+    const t=LANG_CUR==='zh'?'租金優惠兼具惠競爭者':'Rent relief benefits all players equally';
+    const b=LANG_CUR==='zh'?'核心商區零售租金微降0.5%（Knight Frank Q4 2025）降低入場成本，惟對所有競爭者同等效應，護城河效果有限。':'Prime commercial rent −0.5% (Knight Frank Q4 2025) lowers entry costs — but this benefits all new entrants equally, offering limited competitive moat.';
+    ea=mkAdapt(L.adLocEntry,t,b,'Research report — New Entrants dimension (Knight Frank Q4 2025)');
+  } else if(budget==='high'){
+    const t=LANG_CUR==='zh'?'規模資本構成後進者壁壘':'Capital scale creates barrier to followers';
+    const b=LANG_CUR==='zh'?'大快活HK$4.33億廠房設備反映規模化所需資本強度（2024/25年報）；高預算可建立供應鏈規模優勢。':'Fairwood PP&E of HK$433M illustrates scale capital intensity (FY2024/25 Annual Report). High budget enables supply chain scale advantages difficult for new entrants to replicate.';
+    ea=mkAdapt(L.adLocEntry,t,b,'Research report — New Entrants dimension (Fairwood 2024/25 Annual Report)');
+  }
+  setAdapt('entrants-adapt',ea);
+
+  // Suppliers
+  let sa='';
+  if(comp==='supply'){
+    const t=LANG_CUR==='zh'?'可部分對沖95%進口依存風險':'Partially hedges 95% import dependency risk';
+    const b=LANG_CUR==='zh'?'自建供應鏈可繞開大昌行/五豐行集中分銷；2025年12月食品CPI僅+0.7%，當前窗口期建立獨家供應鏈成本壓力相對可控。':'Self-built supply chain bypasses DCH/Ng Fung Hong concentration. Dec 2025 food CPI +0.7% means current cost window for establishing exclusive supply chain is relatively manageable.';
+    sa=mkAdapt(L.adSupply,t,b,'Research report — Suppliers dimension (USDA FAS / C&SD)');
+  } else if(cost==='foodheavy'){
+    const t=LANG_CUR==='zh'?'高食材佔比加大對供應商波動的暴露度':'High food ratio amplifies supplier volatility exposure';
+    const b=LANG_CUR==='zh'?'食材採購佔成本45%時，供應商任何價格調整直接衝擊盈利。報告顯示全行業食材採購佔收入31.9%，偏重配置系統風險更高。':'With food costs at 45% of total cost, any supplier price change directly hits margins. Report shows industry food cost ratio already at 31.9% — food-heavy allocation creates above-average structural risk.';
+    sa=mkAdapt(L.adSupply,t,b,'Research report — Suppliers dimension (C&SD Full Year 2025)');
+  }
+  setAdapt('suppliers-adapt',sa);
+
+  // Buyers
+  let ba='';
+  if(segment==='premium'&&(comp==='signature'||comp==='luxury')){
+    const t=LANG_CUR==='zh'?'差異化部分緩衝購買者高議價能力':'Differentiation partially buffers high buyer power';
+    const b=LANG_CUR==='zh'?'差異化體驗可降低與外賣折扣消費的直接競爭；但仍需面對旅客消費-30%（報告數據）的結構壓力，需深耕本地熟客。':'Experience differentiation reduces direct competition with delivery platform discounts. However, visitor per-capita spend −30% (report data) means premium positioning must rely on local loyal customers, not tourist flow.';
+    ba=mkAdapt(L.adBuyer,t,b,'Research report — Buyers dimension (China Daily / HKTB)');
+  } else if(segment==='mass'&&comp==='value'){
+    const t=LANG_CUR==='zh'?'面臨最強購買者議價壓力':'Faces maximum buyer bargaining pressure';
+    const b=LANG_CUR==='zh'?'KeeTa補貼奪44%市佔+外賣滲透38%令折扣習慣深度形成；港人深圳非現金交易1.26億筆固化北上消費。此組合購買者議價能力達最高水平。':'KeeTa\'s 44% share via subsidies + 38% delivery penetration deeply conditions discount habits. 126M cashless transactions in Shenzhen cement northbound spending. This combination yields maximum buyer power.';
+    ba=mkAdapt(L.adBuyer,t,b,'Research report — Buyers dimension (BBCIncorp / PBOC Shenzhen)');
+  }
+  setAdapt('buyers-adapt',ba);
+
+  // Substitutes
+  let sula='';
+  if(segment==='mass'){
+    const t=LANG_CUR==='zh'?'HK$30–$50外賣專門店直接替代':'HK$30–50 takeaway outlets: direct substitute';
+    const b=LANG_CUR==='zh'?'外賣專門店10年增39%，定價HK$30–50對大眾堂食午市構成最直接替代；超市+便利店佔食品零售55%提供便捷低價選項。':'Takeaway-only outlets grew 39% over 10 years, priced HK$30–50 — direct substitute for mass-market lunch dining. Supermarkets + convenience stores (55% food retail) offer additional cheap alternatives.';
+    sula=mkAdapt(L.adSub,t,b,'Research report — Substitutes dimension (LegCo Research / USDA FAS)');
+  } else {
+    const t=LANG_CUR==='zh'?'體驗消費對即食替代品敏感度較低':'Experience dining less sensitive to substitutes';
+    const b=LANG_CUR==='zh'?'中高端客群對環境體驗有更高要求，替代品威脅相對溫和；但食品電商擴張趨勢（報告確認）仍需持續關注。':'Premium customers have higher expectations for ambiance — substitute threat relatively contained. However, food e-commerce expansion trend (confirmed by report) warrants ongoing monitoring.';
+    sula=mkAdapt(L.adSub,t,b,'Research report — Substitutes dimension');
+  }
+  setAdapt('substitutes-adapt',sula);
+}
+
+function mkAdapt(tag,title,body,source){
+  return`<div class="adapt-tag">🎯 ${tag}</div><div class="data-card"><div class="data-card-value" style="font-size:13px;font-weight:800;margin-bottom:5px">${title}</div><div class="data-card-note" style="font-style:normal">${body}</div><div class="data-source">${LANG_CUR==='zh'?'依據：用戶提供的調研報告數據 —':'Basis: User-provided research report —'} ${source}</div></div>`;
+}
+function setAdapt(id,html){ const el=document.getElementById(id); if(el) el.innerHTML=html; }
+
+function showModal(title,basis,score,weight){
+  const L=LANG[LANG_CUR];
+  document.getElementById('modalTitle').textContent=title+' — '+(LANG_CUR==='zh'?'評分依據':'Score Basis');
+  document.getElementById('modalBody').innerHTML=`<dl>
+    <dt>${L.modalScoreLabel}</dt><dd>${score.toFixed(1)} / 10 (${score>=7?(LANG_CUR==='zh'?'強威脅 High':'High Threat'):score>=5?(LANG_CUR==='zh'?'中等威脅 Medium':'Medium Threat'):(LANG_CUR==='zh'?'弱威脅 Low':'Low Threat')})</dd>
+    <dt>${L.modalWeightLabel}</dt><dd>${weight}% (${LANG_CUR==='zh'?'依用戶決策動態調整':'dynamically adjusted per your decisions'})</dd>
+    <dt>${L.modalBasisLabel}</dt><dd style="white-space:pre-wrap;line-height:1.7;margin-top:5px">${basis}</dd>
+    <dt>${L.modalCriteriaLabel}</dt><dd>${L.modalCriteriaText}</dd>
+    <dt>${LANG_CUR==='zh'?'數據來源聲明':'Data Source Declaration'}</dt><dd>${L.modalSrcDecl}</dd>
+  </dl>`;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
+
+function generateReport(){
+  const{budget,cost,comp,location,segment,scores:sc,weights:wt}=S;
+  const L=LANG[LANG_CUR];
+  if(!budget||!sc.s){
+    document.getElementById('reportContent').innerHTML='<div class="data-notice">'+L.noticeReport+'</div>';
+    return;
+  }
+  const total=composite(sc,wt);
+  const now=new Date().toLocaleDateString(LANG_CUR==='zh'?'zh-HK':'en-HK');
+  const bLM={low:L.bLLow,mid:L.bLMid,high:L.bLHigh};
+  const cLM={foodheavy:L.cLFoodheavy,balanced:L.cLBalanced,ambiance:L.cLAmbiance};
+  const compLM={signature:L.compLSig,value:L.compLVal,luxury:L.compLLux,supply:L.compLSup};
+  const locLM={community:L.locLCom,commercial:L.locLCBD};
+  const segLM={mass:L.segLMass,premium:L.segLPrem};
+  const verd=total>=80?L.profHigh:total>=60?L.profMid:L.profLow;
+  const vc=total>=80?'var(--green-dark)':total>=60?'var(--yellow-dark)':'var(--red-dark)';
+
+  const rows=[['s',L.scardS],['b',L.scardB],['e',L.scardE],['sub',L.scardSub],['r',L.scardR]];
+  let tableRows=rows.map(([k,n])=>`<tr><td>${n}</td><td>${sc[k].toFixed(1)}</td><td>${Math.round(wt[k]*100)}%</td><td>${(sc[k]*wt[k]).toFixed(2)}</td><td>${sc[k]>=7?L.vHigh:sc[k]>=5?L.vMid:L.vLow}</td></tr>`).join('');
+  let socRows=S.socLog.length?S.socLog.map(e=>`<tr><td>${e.type}</td><td style="max-width:150px">${e.question.substring(0,55)}…</td><td style="max-width:150px">${e.answer.substring(0,55)}${e.answer.length>55?'…':''}</td><td style="max-width:150px">${e.guidance.substring(0,55)}…</td><td>${e.time}</td></tr>`).join(''):
+    `<tr><td colspan="5" style="color:var(--muted);text-align:center">${L.socNoRecord}</td></tr>`;
+
+  document.getElementById('reportContent').innerHTML=`
+    <div class="report-section"><div class="report-section-title">🧑‍🍳 ${L.rpS1}</div>
+      <table class="report-table"><tr><th>${L.thSetting}</th><th>${L.thValue}</th></tr>
+        <tr><td>${L.lBudget}</td><td>${bLM[budget]}</td></tr>
+        <tr><td>${L.lCost}</td><td>${cLM[cost]}</td></tr>
+        <tr><td>${L.lComp}</td><td>${compLM[comp]}</td></tr>
+        <tr><td>${L.llLoc}</td><td>${locLM[location]}</td></tr>
+        <tr><td>${L.llSeg}</td><td>${segLM[segment]}</td></tr>
+      </table></div>
+    <div class="report-section"><div class="report-section-title">📊 ${L.rpS2}</div>
+      <table class="report-table"><tr><th>${L.thDimension}</th><th>${L.thScore}</th><th>${L.thWeight}</th><th>${L.thContrib}</th><th>${L.thIntensity}</th></tr>
+        ${tableRows}
+        <tr><td colspan="3"><strong>${L.profHigh.split(' ').slice(0,3).join(' ')}</strong></td><td colspan="2"><strong style="color:${vc};font-size:15px">${total} — ${verd}</strong></td></tr>
+      </table></div>
+    <div class="report-section"><div class="report-section-title">🌏 ${L.rpS3}</div>
+      <div class="data-card"><div class="data-card-value">${L.industrySummary}</div><div class="data-source">${L.inSumSrc}</div></div></div>
+    <div class="report-section"><div class="report-section-title">⚠️ ${L.rpS4}</div>
+      <div class="data-card" style="margin-bottom:8px"><div class="data-card-label">🚆 ${L.risk1Label}</div><div class="data-card-value" style="font-size:13px;font-weight:700">${L.risk1}</div><div class="data-source">${L.risk1Src}</div></div>
+      <div class="data-card" style="margin-bottom:8px"><div class="data-card-label">💼 ${L.risk2Label}</div><div class="data-card-value" style="font-size:13px;font-weight:700">${L.risk2}</div><div class="data-source">${L.risk2Src}</div></div>
+      <div class="data-card"><div class="data-card-label">📱 ${L.risk3Label}</div><div class="data-card-value" style="font-size:13px;font-weight:700">${L.risk3}</div><div class="data-source">${L.risk3Src}</div></div></div>
+    <div class="report-section"><div class="report-section-title">💬 ${L.rpS5}</div>
+      <table class="report-table"><tr><th>${L.thType}</th><th>${L.thQ}</th><th>${L.thA}</th><th>${L.thG}</th><th>${L.thTime}</th></tr>${socRows}</table></div>
+    <div class="report-section"><div class="report-section-title">📚 ${L.rpS6}</div>
+      <table class="report-table"><tr><th>${L.thInstitution}</th><th>${L.thDoc}</th><th>${L.thPeriod}</th></tr>
+        <tr><td>C&SD</td><td>Provisional Statistics of Restaurant Receipts and Purchases</td><td>2025 Full Year</td></tr>
+        <tr><td>C&SD</td><td>Consumer Price Index Monthly Reports</td><td>Dec 2025</td></tr>
+        <tr><td>FEHD</td><td>Guide to PCS Licensing System</td><td>2024–2025</td></tr>
+        <tr><td>USDA FAS</td><td>HK Food Service Annual / Retail Foods Annual</td><td>2024–2025</td></tr>
+        <tr><td>Knight Frank</td><td>Hong Kong Retail Property Market Report Q4 2025</td><td>Q4 2025</td></tr>
+        <tr><td>Fairwood Holdings</td><td>Annual Results Announcement FY2024/25</td><td>FY 2024/25</td></tr>
+        <tr><td>People's Bank of China (SZ)</td><td>Shenzhen Cross-Border Consumption Statistics</td><td>2025</td></tr>
+        <tr><td>LegCo Research Office</td><td>F&B Industry Challenges Research Brief</td><td>2025</td></tr>
+        <tr><td>BLS / Escoffier</td><td>Restaurant Failure Rate & Labour Cost Analysis</td><td>2024–2025</td></tr>
+        <tr><td>BBCIncorp / SCMP / China Daily</td><td>Delivery Market & Northbound Spending Reports</td><td>2024–2025</td></tr>
+      </table>
+      <div style="margin-top:8px;font-family:'DM Mono',monospace;font-size:9px;color:var(--muted)">${L.reportDate} ${now} | ${L.dataNote}</div></div>`;
+
+  document.getElementById('halLog').innerHTML=`<div class="report-section"><div class="report-section-title">🔍 ${L.halTitle}</div><div class="hal-log">
+    <div class="hal-entry"><div class="hal-entry-label">${L.hal1Label}</div><div class="hal-entry-text">${L.hal1}</div></div>
+    <div class="hal-entry"><div class="hal-entry-label">${L.hal2Label}</div><div class="hal-entry-text">${L.hal2}</div></div>
+    <div class="hal-entry"><div class="hal-entry-label">${L.hal3Label}</div><div class="hal-entry-text">${L.hal3}</div></div>
+    <div class="hal-entry"><div class="hal-entry-label">${L.hal4Label}</div><div class="hal-entry-text">${L.hal4}</div></div>
+    <div class="hal-entry"><div class="hal-entry-label">${L.hal5Label}</div><div class="hal-entry-text">${L.hal5}</div></div>
+  </div></div>`;
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('content-'+name).classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// Init in English
+applyLang();
+</script>
+</body>
+</html>
